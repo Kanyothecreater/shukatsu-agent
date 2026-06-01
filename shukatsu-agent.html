@@ -432,6 +432,12 @@
       <div id="gcal-status" style="margin-top:8px;font-size:12px;color:var(--text2);text-align:center;"></div>
       <div class="hint" style="margin-top:8px;">一度認証すれば、トークンは自動的に更新されます。</div>
     </div>
+    <div class="field">
+      <label>☁️ クラウド同期パスワード</label>
+      <input type="password" id="sync-key-input" placeholder="自分で決めるパスワード" />
+      <div class="hint">パスワードを設定すると、データがクラウドに自動保存されます。別の端末で同じパスワードを入力すればデータが復元されます。<span style="color:var(--amber)">※忘れないでください。このパスワードがないとデータを取り出せません。</span></div>
+      <div id="sync-status" style="margin-top:6px;font-size:12px;color:var(--text2);"></div>
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSettings()">キャンセル</button>
       <button class="btn-primary" onclick="saveSettings()">保存</button>
@@ -470,6 +476,7 @@ function showView(v, btn) {
 // ─── Settings ────────────────────────────────────────────
 function openSettings() {
   document.getElementById('groq-key-input').value = settings.groqKey || '';
+  document.getElementById('sync-key-input').value = settings.syncKey || '';
   const status = document.getElementById('gcal-status');
   if (settings.gcalToken) {
     status.textContent = '✅ Google Calendar 連携済み';
@@ -478,17 +485,27 @@ function openSettings() {
     status.textContent = '未連携';
     status.style.color = 'var(--text2)';
   }
+  const syncStatus = document.getElementById('sync-status');
+  syncStatus.textContent = settings.syncKey ? '✅ クラウド同期 有効' : '同期オフ';
+  syncStatus.style.color = settings.syncKey ? 'var(--accent)' : 'var(--text2)';
   document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettings() {
   document.getElementById('settings-modal').classList.remove('open');
 }
-function saveSettings() {
+async function saveSettings() {
   settings.groqKey = document.getElementById('groq-key-input').value.trim();
+  const newSyncKey = document.getElementById('sync-key-input').value.trim();
+  const syncKeyChanged = newSyncKey && newSyncKey !== settings.syncKey;
+  settings.syncKey = newSyncKey;
   localStorage.setItem('shukatsu_settings', JSON.stringify(settings));
   if (settings.groqKey) document.getElementById('setup-banner').style.display = 'none';
   closeSettings();
   addMessage('assistant', '✅ 設定を保存しました！');
+  if (syncKeyChanged) {
+    addMessage('assistant', '☁️ クラウドからデータを確認しています...');
+    await cloudPull(true);
+  }
 }
 
 function startGoogleLogin() {
@@ -676,7 +693,7 @@ async function addToGoogleCalendar(ev) {
     else addMessage('assistant', `⚠️ Calendar への追加に失敗: ${data.error?.message}`);
   } catch(e) { addMessage('assistant', `⚠️ Calendar API エラー: ${e.message}`); }
 }
-function saveEvents() { localStorage.setItem('shukatsu_events', JSON.stringify(events)); }
+function saveEvents() { localStorage.setItem('shukatsu_events', JSON.stringify(events)); cloudPush(); }
 function filterEvents(f, btn) {
   currentFilter = f;
   document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
@@ -789,7 +806,7 @@ const BOARD_STAGES = ['気になる・説明会', 'OB・OG訪問', 'ES提出', '
   });
   if (changed) localStorage.setItem('shukatsu_companies', JSON.stringify(companies));
 })();
-function saveCompanies() { localStorage.setItem('shukatsu_companies', JSON.stringify(companies)); }
+function saveCompanies() { localStorage.setItem('shukatsu_companies', JSON.stringify(companies)); cloudPush(); }
 let draggedCompanyId = null;
 
 function renderBoard() {
@@ -878,7 +895,7 @@ function boardDrop(e, stage) {
 }
 
 // ─── Memo ─────────────────────────────────────────────────
-function saveMemos() { localStorage.setItem('shukatsu_memos', JSON.stringify(memos)); }
+function saveMemos() { localStorage.setItem('shukatsu_memos', JSON.stringify(memos)); cloudPush(); }
 function renderMemoList() {
   const memoCompanies = [...new Set(events.map(e=>e.company))];
   const sel = document.getElementById('memo-company-tag');
@@ -1108,6 +1125,62 @@ function importData(e) {
   reader.readAsText(file);
   e.target.value = '';
 }
+
+// ─── Cloud Sync (Supabase) ────────────────────────────────
+const SUPABASE_URL = 'https://bpemxcdepojamjvukltg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_ko-seBXb48JTi3scnloWuQ_6javiTB7';
+let cloudPushTimer = null;
+
+function cloudPush() {
+  if (!settings.syncKey) return;
+  clearTimeout(cloudPushTimer);
+  cloudPushTimer = setTimeout(async () => {
+    try {
+      const payload = {
+        key: 'user_' + settings.syncKey,
+        value: { events, memos, companies },
+        updated_at: new Date().toISOString()
+      };
+      await fetch(`${SUPABASE_URL}/rest/v1/app_data`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) { console.error('Cloud push failed:', e); }
+  }, 1500);
+}
+
+async function cloudPull(showMsg) {
+  if (!settings.syncKey) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_data?key=eq.user_${encodeURIComponent(settings.syncKey)}&select=value`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    const rows = await res.json();
+    if (rows && rows.length && rows[0].value) {
+      const d = rows[0].value;
+      if (d.events) { events = d.events; localStorage.setItem('shukatsu_events', JSON.stringify(events)); }
+      if (d.memos) { memos = d.memos; localStorage.setItem('shukatsu_memos', JSON.stringify(memos)); }
+      if (d.companies) { companies = d.companies; localStorage.setItem('shukatsu_companies', JSON.stringify(companies)); }
+      renderEvents(); renderMemoList();
+      if (showMsg) addMessage('assistant', '☁️ クラウドからデータを復元しました！');
+    } else if (showMsg) {
+      addMessage('assistant', '☁️ クラウド同期を有効にしました。これからデータは自動保存されます。');
+      cloudPush();
+    }
+  } catch (e) {
+    console.error('Cloud pull failed:', e);
+    if (showMsg) addMessage('assistant', '⚠️ クラウド同期に失敗しました: ' + e.message);
+  }
+}
+
+if (settings.syncKey) cloudPull(false);
 </script>
 </body>
 </html>
+
