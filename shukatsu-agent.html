@@ -254,6 +254,42 @@
   .hint { font-size: 11px; color: var(--text3); margin-top: 4px; line-height: 1.5; }
   a.link { color: var(--accent); text-decoration: none; }
   a.link:hover { text-decoration: underline; }
+
+  /* ── Mobile responsive ── */
+  @media (max-width: 700px) {
+    header { flex-wrap: wrap; padding: 10px 14px; gap: 8px; }
+    .logo { font-size: 16px; }
+    #global-search { margin-left: 0; order: 3; width: 100%; }
+    header nav { width: 100%; margin-left: 0; overflow-x: auto; gap: 2px; -webkit-overflow-scrolling: touch; }
+    header nav button { font-size: 12px; padding: 6px 10px; white-space: nowrap; flex-shrink: 0; }
+    #search-results { left: 14px; right: 14px; width: auto; top: auto; }
+
+    /* Chat view: stack sidebar below chat */
+    #chat-view { flex-direction: column; }
+    #chat-panel { border-right: none; border-bottom: 1px solid var(--border); }
+    #sidebar { width: 100%; max-height: 240px; }
+
+    /* Memo view: stack list above editor */
+    #memo-view { flex-direction: column; }
+    #memo-list { width: 100%; max-height: 180px; border-right: none; border-bottom: 1px solid var(--border); }
+
+    /* Board: cards narrower */
+    .board-column { flex: 0 0 180px; }
+
+    /* Today: less padding */
+    #today-view > div { padding: 18px 14px !important; }
+
+    /* Calendar: smaller cells */
+    .cal-day { min-height: 56px; padding: 3px; }
+    .cal-dot { font-size: 9px; padding: 1px 3px; }
+    .cal-body { padding: 10px 12px; }
+
+    /* Messages wider */
+    .msg { max-width: 92%; }
+
+    /* Modals fit screen */
+    .modal-box, #event-detail-modal > div { width: 94vw !important; padding: 20px !important; }
+  }
 </style>
 </head>
 <body>
@@ -632,6 +668,8 @@ function renderEventCard(ev) {
     <span class="type-badge ${typeClass}" style="margin-left:6px">${ev.type || 'その他'}</span></div>
     <div class="ev-meta">📅 ${formatDatetime(ev.datetime)}</div>
     ${ev.note ? `<div class="ev-meta">📝 ${ev.note}</div>` : ''}
+    ${ev.loginUrl ? `<div class="ev-meta">🔗 ${ev.loginUrl}</div>` : ''}
+    ${ev.loginId ? `<div class="ev-meta">🆔 ${ev.loginId}</div>` : ''}
     <div class="ev-actions">
       <button class="ev-btn confirm" onclick='confirmEvent(${JSON.stringify(ev).replace(/'/g,"&#39;")})'>✓ 登録する</button>
       <button class="ev-btn cancel" onclick="this.closest('.event-card').remove()">✕ キャンセル</button>
@@ -728,15 +766,19 @@ function buildSystemPrompt() {
   return `あなたは就職活動の日程管理AIです。今日: ${new Date().toLocaleString('ja-JP')}
 登録済み予定:\n${evList}
 
+ユーザーは予定をテキストで伝えたり、企業からのメールをそのまま貼り付けたりします。
+
 新しい予定を検出したら、必ず以下のルールを守ること:
 1. JSONは必ず \`\`\`json と \`\`\` で囲むこと。生のJSONだけを返すことは絶対禁止。
 2. 形式:
 \`\`\`json
-{"company":"会社名","type":"面接|ES|説明会|筆記|その他","datetime":"YYYY-MM-DDTHH:mm:ss","note":"メモ","reminders":[1440,60]}
+{"company":"会社名","type":"面接|ES|説明会|筆記|その他","datetime":"YYYY-MM-DDTHH:mm:ss","note":"メモ","reminders":[1440,60],"loginUrl":"マイページURL（あれば）","loginId":"ログインID（あれば）","loginNote":"パスワードのヒントなど（あれば）"}
 \`\`\`
-3. 日時が不明な場合は確認する。
-4. 一覧を聞かれたら見やすく教える。
-5. 簡潔に返答する。`;
+3. メールにマイページのURL・ID・ログイン情報があれば loginUrl / loginId / loginNote に含める。なければ省略可。
+4. 複数の予定があれば、それぞれを別のJSONブロックで返す。
+5. 日時が不明な場合は確認する。
+6. 一覧を聞かれたら見やすく教える。
+7. 簡潔に返答する。`;
 }
 
 // ─── Event management ─────────────────────────────────────
@@ -744,6 +786,26 @@ async function confirmEvent(ev) {
   ev.id = Date.now(); ev.status = 'pending'; ev.createdAt = new Date().toISOString();
   events.push(ev); saveEvents(); renderEvents();
   addMessage('assistant', `✅ ${ev.company} の ${ev.type} を登録しました！\n${formatDatetime(ev.datetime)}`);
+
+  // If login info was extracted, save it into the company memo + ensure a board card exists
+  if (ev.loginUrl || ev.loginId || ev.loginNote) {
+    let m = memos.find(m => m.company === ev.company);
+    if (!m) {
+      m = { id: Date.now()+1, title: ev.company, content: '', company: ev.company, isCompanyMemo: true, updatedAt: Date.now() };
+      memos.unshift(m);
+    }
+    m.isCompanyMemo = true;
+    if (ev.loginUrl) m.loginUrl = ev.loginUrl;
+    if (ev.loginId) m.loginId = ev.loginId;
+    if (ev.loginNote) m.loginNote = ev.loginNote;
+    saveMemos();
+    if (!companies.find(c => c.name === ev.company)) {
+      companies.push({ id: Date.now()+2, name: ev.company, stage: BOARD_STAGES[0] });
+      saveCompanies();
+    }
+    addMessage('assistant', `🔑 ${ev.company} のマイページ情報をメモに保存しました。`);
+  }
+
   if (settings.gcalToken) await addToGoogleCalendar(ev);
 }
 async function addToGoogleCalendar(ev) {
