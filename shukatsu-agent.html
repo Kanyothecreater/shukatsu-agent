@@ -869,7 +869,8 @@ function openMemo(id) {
   document.getElementById('memo-title-input').value = m.title || '';
   document.getElementById('memo-content').value = m.content || '';
   document.getElementById('memo-company-tag').value = m.company || '';
-  memoPreviewMode = false;
+  // Empty memo -> edit mode so you can type; existing memo -> link preview mode
+  memoPreviewMode = (m.content && m.content.trim().length > 0);
   applyMemoMode();
   renderMemoList();
 }
