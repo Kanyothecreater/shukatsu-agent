@@ -260,14 +260,21 @@
 
 <header>
   <div class="logo">就活<span>Agent</span></div>
+  <input type="text" id="global-search" placeholder="🔍 検索..." oninput="doSearch(this.value)" onfocus="doSearch(this.value)" style="margin-left:20px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;width:200px;">
   <nav>
     <button class="active" onclick="showView('chat', this)">💬 チャット</button>
     <button onclick="showView('calendar', this)">📅 カレンダー</button>
     <button onclick="showView('memo', this)">📝 メモ</button>
     <button onclick="showView('board', this)">📊 進捗</button>
+    <button onclick="exportData()" title="バックアップをダウンロード">💾</button>
+    <button onclick="document.getElementById('import-file').click()" title="バックアップを読み込む">📂</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
     <button onclick="openSettings()">⚙️ 設定</button>
   </nav>
 </header>
+
+<!-- Search results dropdown -->
+<div id="search-results" style="display:none;position:absolute;top:56px;left:160px;width:360px;max-height:400px;overflow-y:auto;background:var(--surface);border:1px solid var(--border2);border-radius:10px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
 
 <div id="setup-banner">
   ⚠️ まずは <a onclick="openSettings()">設定</a> で Groq API キーを入力してください
@@ -791,6 +798,12 @@ function renderBoard() {
     const cards = companies.filter(c => c.stage === stage);
     const cardsHtml = cards.map(c => {
       const linkedMemo = memos.find(m => m.company === c.name);
+      const nextEv = events
+        .filter(e => e.company === c.name && e.status !== 'done' && new Date(e.datetime) >= new Date())
+        .sort((a,b) => new Date(a.datetime) - new Date(b.datetime))[0];
+      const nextEvHtml = nextEv
+        ? `<div class="board-card-meta" style="color:var(--accent);margin-top:4px;">📅 ${nextEv.type} ${new Date(nextEv.datetime).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})}</div>`
+        : '';
       return `
       <div class="board-card" draggable="true" data-id="${c.id}"
         ondragstart="boardDragStart(event, ${c.id})" ondragend="boardDragEnd(event)"
@@ -800,6 +813,7 @@ function renderBoard() {
           <span onclick="event.stopPropagation();deleteCompany(${c.id})" style="font-size:11px;color:var(--text3);cursor:pointer;padding:0 4px;" title="削除">✕</span>
         </div>
         ${linkedMemo && linkedMemo.content ? `<div class="board-card-meta">📝 ${linkedMemo.content.slice(0,30)}</div>` : '<div class="board-card-meta" style="opacity:0.5">クリックでメモ</div>'}
+        ${nextEvHtml}
       </div>`;
     }).join('');
     const addBox = idx === 0 ? `<div class="board-add"><input type="text" placeholder="＋ 会社を追加 (Enter)" onkeydown="addCompany(event)"></div>` : '';
@@ -1011,7 +1025,89 @@ function checkReminders() {
   });
 }
 setInterval(checkReminders, 60000);
+
+// ─── Global Search ────────────────────────────────────────
+function doSearch(q) {
+  const box = document.getElementById('search-results');
+  q = q.trim().toLowerCase();
+  if (!q) { box.style.display = 'none'; return; }
+  const hits = [];
+  events.forEach(e => {
+    if ((e.company||'').toLowerCase().includes(q) || (e.type||'').toLowerCase().includes(q) || (e.note||'').toLowerCase().includes(q)) {
+      hits.push({ icon:'📅', title:`${e.company} ${e.type}`, sub:formatDatetime(e.datetime), action:`showView('calendar',document.querySelectorAll('header nav button')[1]);closeSearch()` });
+    }
+  });
+  memos.forEach(m => {
+    if ((m.title||'').toLowerCase().includes(q) || (m.content||'').toLowerCase().includes(q) || (m.company||'').toLowerCase().includes(q)) {
+      hits.push({ icon:'📝', title:m.title||'無題', sub:(m.content||'').slice(0,40), action:`openMemoFromSearch(${m.id})` });
+    }
+  });
+  companies.forEach(c => {
+    if ((c.name||'').toLowerCase().includes(q)) {
+      hits.push({ icon:'📊', title:c.name, sub:c.stage, action:`openCompanyMemo(${c.id});closeSearch()` });
+    }
+  });
+  if (!hits.length) { box.innerHTML = `<div style="padding:16px;color:var(--text3);font-size:13px;text-align:center;">該当なし</div>`; box.style.display='block'; return; }
+  box.innerHTML = hits.slice(0,15).map(h => `
+    <div onclick="${h.action}" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">
+      <span>${h.icon}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;">${h.title}</div>
+        <div style="font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${h.sub}</div>
+      </div>
+    </div>`).join('');
+  box.style.display = 'block';
+}
+function closeSearch() {
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('global-search').value = '';
+}
+function openMemoFromSearch(id) {
+  showView('memo', document.querySelectorAll('header nav button')[2]);
+  openMemo(id);
+  closeSearch();
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#global-search') && !e.target.closest('#search-results')) {
+    document.getElementById('search-results').style.display = 'none';
+  }
+});
+
+// ─── Export / Import ──────────────────────────────────────
+function exportData() {
+  const data = {
+    events, memos, companies,
+    exportedAt: new Date().toISOString(),
+    version: 1
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `shukatsu-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!confirm('現在のデータを上書きします。よろしいですか？（先に現在のデータをエクスポートすることをおすすめします）')) return;
+      if (data.events) { events = data.events; saveEvents(); }
+      if (data.memos) { memos = data.memos; saveMemos(); }
+      if (data.companies) { companies = data.companies; saveCompanies(); }
+      renderEvents(); renderMemoList();
+      alert('✅ データを読み込みました！');
+    } catch (err) {
+      alert('❌ ファイルの読み込みに失敗しました: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
 </script>
 </body>
 </html>
-
