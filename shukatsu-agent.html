@@ -202,7 +202,9 @@
   .memo-item-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .memo-item-date { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
   .memo-item-preview { font-size: 11px; color: var(--text2); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #memo-editor { flex: 1; display: flex; flex-direction: column; }
+  #memo-editor { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  #memo-edit-area { min-height: 0; }
+  #memo-preview { min-height: 0; }
   #memo-toolbar { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   #memo-title-input { flex: 1; background: none; border: none; color: var(--text); font-family: var(--font); font-size: 15px; font-weight: 500; outline: none; }
   #memo-title-input::placeholder { color: var(--text3); }
@@ -342,7 +344,7 @@
         <div style="font-size:32px">📝</div>
         メモを選択するか新規作成してください
       </div>
-      <div id="memo-edit-area" style="display:none; flex:1; flex-direction:column;">
+      <div id="memo-edit-area" style="display:none; flex:1; flex-direction:column; min-height:0;">
         <div id="memo-toolbar">
           <input type="text" id="memo-title-input" placeholder="タイトル..." oninput="saveMemo()">
           <select id="memo-company-tag" onchange="saveMemo()" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text2);border-radius:5px;padding:3px 8px;font-size:11px;font-family:var(--font);outline:none;">
