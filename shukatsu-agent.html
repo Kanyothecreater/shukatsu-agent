@@ -838,8 +838,11 @@ function openCompanyMemo(id) {
   if (!c) return;
   let m = memos.find(m => m.company === c.name);
   if (!m) {
-    m = { id: Date.now(), title: c.name, content: '', company: c.name, updatedAt: Date.now() };
+    m = { id: Date.now(), title: c.name, content: '', company: c.name, isCompanyMemo: true, updatedAt: Date.now() };
     memos.unshift(m);
+    saveMemos();
+  } else {
+    m.isCompanyMemo = true;
     saveMemos();
   }
   // switch to memo view
@@ -891,6 +894,7 @@ function openMemo(id) {
   document.getElementById('login-url').value = m.loginUrl || '';
   document.getElementById('login-id').value = m.loginId || '';
   document.getElementById('login-note').value = m.loginNote || '';
+  document.getElementById('login-info-box').style.display = m.isCompanyMemo ? 'block' : 'none';
   updateLoginUrlLink();
   // Empty memo -> edit mode so you can type; existing memo -> link preview mode
   memoPreviewMode = (m.content && m.content.trim().length > 0);
@@ -1010,3 +1014,4 @@ setInterval(checkReminders, 60000);
 </script>
 </body>
 </html>
+
