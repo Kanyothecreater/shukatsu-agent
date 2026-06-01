@@ -262,7 +262,8 @@
   <div class="logo">就活<span>Agent</span></div>
   <input type="text" id="global-search" placeholder="🔍 検索..." oninput="doSearch(this.value)" onfocus="doSearch(this.value)" style="margin-left:20px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;width:200px;">
   <nav>
-    <button class="active" onclick="showView('chat', this)">💬 チャット</button>
+    <button class="active" onclick="showView('today', this)">🏠 今日</button>
+    <button onclick="showView('chat', this)">💬 チャット</button>
     <button onclick="showView('calendar', this)">📅 カレンダー</button>
     <button onclick="showView('memo', this)">📝 メモ</button>
     <button onclick="showView('board', this)">📊 進捗</button>
@@ -282,8 +283,18 @@
 </div>
 
 <main>
+  <!-- ── Today View ── -->
+  <div id="today-view" class="view-panel active" style="flex-direction:column;overflow-y:auto;">
+    <div style="max-width:720px;width:100%;margin:0 auto;padding:28px 24px;">
+      <h2 id="today-greeting" style="margin:0 0 4px;font-size:20px;font-weight:600;"></h2>
+      <p id="today-date" style="margin:0 0 20px;font-size:13px;color:var(--text2);"></p>
+      <div id="today-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;"></div>
+      <div id="today-content"></div>
+    </div>
+  </div>
+
   <!-- ── Chat View ── -->
-  <div id="chat-view" class="view-panel active">
+  <div id="chat-view" class="view-panel">
     <div id="chat-panel">
       <div id="messages">
         <div class="msg assistant">
@@ -461,6 +472,7 @@ let calMonth = new Date().getMonth();
 if (settings.groqKey) document.getElementById('setup-banner').style.display = 'none';
 renderEvents();
 renderMemoList();
+renderToday();
 
 // ─── View switching ───────────────────────────────────────
 function showView(v, btn) {
@@ -468,9 +480,71 @@ function showView(v, btn) {
   document.querySelectorAll('header nav button').forEach(b => b.classList.remove('active'));
   document.getElementById(v + '-view').classList.add('active');
   if (btn) btn.classList.add('active');
+  if (v === 'today') renderToday();
   if (v === 'calendar') renderCalendar();
   if (v === 'memo') renderMemoList();
   if (v === 'board') renderBoard();
+}
+
+// ─── Today Dashboard ──────────────────────────────────────
+function renderToday() {
+  const now = new Date();
+  const greeting = (() => {
+    const h = now.getHours();
+    if (h < 11) return 'おはようございます';
+    if (h < 18) return 'こんにちは';
+    return 'こんばんは';
+  })();
+  document.getElementById('today-greeting').textContent = `${greeting} 👋`;
+  const wd = ['日','月','火','水','木','金','土'][now.getDay()];
+  document.getElementById('today-date').textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${wd}）`;
+
+  const active = events.filter(e => e.status !== 'done');
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const endOfToday = new Date(startOfToday.getTime() + 86400000);
+  const endOfWeek = new Date(startOfToday.getTime() + 7*86400000);
+
+  const todayEvs = active.filter(e => { const d = new Date(e.datetime); return d >= startOfToday && d < endOfToday; });
+  const weekEvs = active.filter(e => { const d = new Date(e.datetime); return d >= endOfToday && d < endOfWeek; });
+
+  document.getElementById('today-stats').innerHTML = `
+    <div style="background:var(--surface);border-radius:8px;padding:12px;border:1px solid var(--border);">
+      <div style="font-size:12px;color:var(--text2);">今日</div><div style="font-size:22px;font-weight:600;">${todayEvs.length}</div></div>
+    <div style="background:var(--surface);border-radius:8px;padding:12px;border:1px solid var(--border);">
+      <div style="font-size:12px;color:var(--text2);">今週</div><div style="font-size:22px;font-weight:600;">${weekEvs.length}</div></div>
+    <div style="background:var(--surface);border-radius:8px;padding:12px;border:1px solid var(--border);">
+      <div style="font-size:12px;color:var(--text2);">選考中</div><div style="font-size:22px;font-weight:600;">${companies.length}</div></div>`;
+
+  const fmtTime = d => new Date(d).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+  const fmtDay = d => { const x=new Date(d); const w=['日','月','火','水','木','金','土'][x.getDay()]; return `${x.getMonth()+1}/${x.getDate()} (${w})`; };
+  const daysLeft = d => Math.ceil((new Date(d)-now)/86400000);
+
+  let html = '';
+  if (todayEvs.length) {
+    html += `<div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:8px;">⚠️ 今日</div>`;
+    todayEvs.sort((a,b)=>new Date(a.datetime)-new Date(b.datetime)).forEach(e => {
+      html += `<div onclick="openEventDetail(${e.id})" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:0 8px 8px 0;padding:12px 14px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:500;font-size:14px;">${e.company}</span>
+        <span class="type-badge type-${e.type||'その他'}">${e.type||'その他'}</span>
+        <span style="margin-left:auto;font-size:12px;color:var(--red);font-family:var(--mono);">今日 ${fmtTime(e.datetime)}</span></div></div>`;
+    });
+    html += '<div style="height:16px"></div>';
+  }
+  if (weekEvs.length) {
+    html += `<div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:8px;">📅 今週</div>`;
+    weekEvs.sort((a,b)=>new Date(a.datetime)-new Date(b.datetime)).forEach(e => {
+      const dl = daysLeft(e.datetime);
+      const color = dl <= 2 ? 'var(--amber)' : 'var(--accent)';
+      html += `<div onclick="openEventDetail(${e.id})" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-left:3px solid ${color};border-radius:0 8px 8px 0;padding:12px 14px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:500;font-size:14px;">${e.company}</span>
+        <span class="type-badge type-${e.type||'その他'}">${e.type||'その他'}</span>
+        <span style="margin-left:auto;font-size:12px;color:var(--text2);font-family:var(--mono);">${fmtDay(e.datetime)} あと${dl}日</span></div></div>`;
+    });
+  }
+  if (!todayEvs.length && !weekEvs.length) {
+    html = `<div style="text-align:center;padding:50px 20px;color:var(--text3);"><div style="font-size:40px;margin-bottom:12px;">🌱</div>今週の予定はありません<br><span style="font-size:12px;">チャットで予定を追加しましょう</span></div>`;
+  }
+  document.getElementById('today-content').innerHTML = html;
 }
 
 // ─── Settings ────────────────────────────────────────────
@@ -701,6 +775,7 @@ function filterEvents(f, btn) {
   renderEvents();
 }
 function renderEvents() {
+  if (typeof renderToday === 'function') renderToday();
   const container = document.getElementById('events-list');
   const now = new Date();
   let filtered = events.filter(ev => {
@@ -1183,4 +1258,3 @@ if (settings.syncKey) cloudPull(false);
 </script>
 </body>
 </html>
-
