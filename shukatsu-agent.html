@@ -770,13 +770,19 @@ function renderBoard() {
   const container = document.getElementById('board-container');
   container.innerHTML = BOARD_STAGES.map((stage, idx) => {
     const cards = companies.filter(c => c.stage === stage);
-    const cardsHtml = cards.map(c => `
+    const cardsHtml = cards.map(c => {
+      const linkedMemo = memos.find(m => m.company === c.name);
+      return `
       <div class="board-card" draggable="true" data-id="${c.id}"
         ondragstart="boardDragStart(event, ${c.id})" ondragend="boardDragEnd(event)"
-        onclick="editCompany(${c.id})">
-        <div class="board-card-company">${c.name}</div>
-        ${c.memo ? `<div class="board-card-meta">📝 ${c.memo.slice(0,30)}</div>` : ''}
-      </div>`).join('');
+        onclick="openCompanyMemo(${c.id})">
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span class="board-card-company" style="flex:1">${c.name}</span>
+          <span onclick="event.stopPropagation();deleteCompany(${c.id})" style="font-size:11px;color:var(--text3);cursor:pointer;padding:0 4px;" title="削除">✕</span>
+        </div>
+        ${linkedMemo && linkedMemo.content ? `<div class="board-card-meta">📝 ${linkedMemo.content.slice(0,30)}</div>` : '<div class="board-card-meta" style="opacity:0.5">クリックでメモ</div>'}
+      </div>`;
+    }).join('');
     const addBox = idx === 0 ? `<div class="board-add"><input type="text" placeholder="＋ 会社を追加 (Enter)" onkeydown="addCompany(event)"></div>` : '';
     return `<div class="board-column">
       <div class="board-col-header">
@@ -795,21 +801,34 @@ function addCompany(e) {
   if (e.key !== 'Enter') return;
   const name = e.target.value.trim();
   if (!name) return;
-  companies.push({ id: Date.now(), name, stage: '気になる', memo: '' });
+  companies.push({ id: Date.now(), name, stage: BOARD_STAGES[0] });
   saveCompanies(); renderBoard();
+  e.target.value = '';
 }
-function editCompany(id) {
+function deleteCompany(id) {
   const c = companies.find(c => c.id === id);
   if (!c) return;
-  const memo = prompt(`「${c.name}」のメモ:`, c.memo || '');
-  if (memo === null) {
-    if (confirm(`「${c.name}」を削除しますか？`)) {
-      companies = companies.filter(x => x.id !== id);
-      saveCompanies(); renderBoard();
-    }
-    return;
+  if (confirm(`「${c.name}」を削除しますか？（メモは残ります）`)) {
+    companies = companies.filter(x => x.id !== id);
+    saveCompanies(); renderBoard();
   }
-  c.memo = memo; saveCompanies(); renderBoard();
+}
+// Click a company card -> open or create its memo, then jump to memo view
+function openCompanyMemo(id) {
+  const c = companies.find(c => c.id === id);
+  if (!c) return;
+  let m = memos.find(m => m.company === c.name);
+  if (!m) {
+    m = { id: Date.now(), title: c.name, content: '', company: c.name, updatedAt: Date.now() };
+    memos.unshift(m);
+    saveMemos();
+  }
+  // switch to memo view
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('header nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('memo-view').classList.add('active');
+  document.querySelectorAll('header nav button').forEach(b => { if (b.textContent.includes('メモ')) b.classList.add('active'); });
+  openMemo(m.id);
 }
 function boardDragStart(e, id) { draggedCompanyId = id; e.target.classList.add('dragging'); }
 function boardDragEnd(e) { e.target.classList.remove('dragging'); }
