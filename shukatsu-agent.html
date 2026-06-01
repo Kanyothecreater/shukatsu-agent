@@ -749,10 +749,17 @@ function extractEvents(text) {
   const seen = new Set();
   const objRegex = /\{[^{}]*"company"[^{}]*\}/g;
   let m;
+  const isNone = v => !v || ['none','null','なし','n/a','-','未定','不明'].includes(String(v).trim().toLowerCase());
   while ((m = objRegex.exec(text)) !== null) {
     try {
       const obj = JSON.parse(m[0]);
-      if (obj.company && obj.datetime) {
+      // require a valid, parseable date
+      if (obj.company && obj.datetime && !isNaN(new Date(obj.datetime).getTime())) {
+        // clean up "NONE"/placeholder login fields
+        if (isNone(obj.loginUrl)) delete obj.loginUrl;
+        if (isNone(obj.loginId)) delete obj.loginId;
+        if (isNone(obj.loginNote)) delete obj.loginNote;
+        if (isNone(obj.note)) delete obj.note;
         const key = obj.company + obj.datetime;
         if (!seen.has(key)) { seen.add(key); results.push(obj); }
       }
@@ -774,9 +781,9 @@ function buildSystemPrompt() {
 \`\`\`json
 {"company":"会社名","type":"面接|ES|説明会|筆記|その他","datetime":"YYYY-MM-DDTHH:mm:ss","note":"メモ","reminders":[1440,60],"loginUrl":"マイページURL（あれば）","loginId":"ログインID（あれば）","loginNote":"パスワードのヒントなど（あれば）"}
 \`\`\`
-3. メールにマイページのURL・ID・ログイン情報があれば loginUrl / loginId / loginNote に含める。なければ省略可。
+3. メールにマイページのURL・ID・ログイン情報があれば loginUrl / loginId / loginNote に含める。情報がない項目はJSONに含めないこと（"NONE"や"なし"と書かない）。
 4. 複数の予定があれば、それぞれを別のJSONブロックで返す。
-5. 日時が不明な場合は確認する。
+5. 日時が本文から特定できない場合は、JSONを作らずにユーザーに日時を質問すること。推測で適当な日時を入れない。
 6. 一覧を聞かれたら見やすく教える。
 7. 簡潔に返答する。`;
 }
@@ -810,6 +817,7 @@ async function confirmEvent(ev) {
 }
 async function addToGoogleCalendar(ev) {
   const start = new Date(ev.datetime);
+  if (isNaN(start.getTime())) { addMessage('assistant', '⚠️ 日時が未定のため、カレンダーには追加していません。'); return; }
   const end = new Date(start.getTime() + 60*60*1000);
   const body = {
     summary: `【就活】${ev.company} ${ev.type}`,
@@ -847,9 +855,11 @@ function renderEvents() {
   }).sort((a,b) => new Date(a.datetime)-new Date(b.datetime));
   if (!filtered.length) { container.innerHTML=`<div class="empty-state"><div class="empty-icon">${currentFilter==='done'?'✅':'📭'}</div>${currentFilter==='done'?'完了した予定はありません':'予定がありません'}</div>`; return; }
   container.innerHTML = filtered.map(ev => {
-    const diff = (new Date(ev.datetime)-now)/86400000;
+    const validDate = !isNaN(new Date(ev.datetime).getTime());
+    const diff = validDate ? (new Date(ev.datetime)-now)/86400000 : null;
     let urgency='ok', countdown='';
     if (ev.status==='done') urgency='done';
+    else if (!validDate) { urgency='ok'; countdown=`<div class="ei-countdown ok-text" style="color:var(--amber)">📌 日時未定</div>`; }
     else if (diff<1) { urgency='urgent'; countdown=`<div class="ei-countdown urgent-text">⚠️ 今日！</div>`; }
     else if (diff<3) { urgency='soon'; countdown=`<div class="ei-countdown soon-text">⏰ あと${Math.ceil(diff)}日</div>`; }
     else countdown=`<div class="ei-countdown ok-text">あと${Math.ceil(diff)}日</div>`;
@@ -1168,7 +1178,9 @@ refreshGoogleToken();
 // ─── Periodic reminder check ──────────────────────────────
 function formatDatetime(dt) {
   if (!dt) return '日時未定';
-  return new Date(dt).toLocaleString('ja-JP', { month:'long', day:'numeric', weekday:'short', hour:'2-digit', minute:'2-digit' });
+  const d = new Date(dt);
+  if (isNaN(d.getTime())) return '日時未定';
+  return d.toLocaleString('ja-JP', { month:'long', day:'numeric', weekday:'short', hour:'2-digit', minute:'2-digit' });
 }
 function checkReminders() {
   const now = new Date();
@@ -1320,3 +1332,4 @@ if (settings.syncKey) cloudPull(false);
 </script>
 </body>
 </html>
+
