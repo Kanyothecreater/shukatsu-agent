@@ -1,77 +1,68 @@
-🎯 Shukatsu Agent
+# 🎯 Shukatsu Agent
 
-AI を活用して就職活動全体を一元管理するためのプラットフォームです。
+AI-powered job hunting management platform for Japanese recruiting.
 
-面接日程やES締切の管理だけでなく、企業ごとの選考進捗、メモ、マイページ情報、Google Calendar 連携までを一つの環境で管理できます。
+就活 Agent は、AI を活用して就職活動のスケジュール管理・選考管理・企業情報管理を一元化する Web アプリです。
 
-利用者は自然言語でチャットするだけで予定を登録でき、煩雑になりがちな就職活動の情報を整理・可視化できます。
+---
 
-背景
+## Demo
 
-新卒採用における就職活動では、多くの場合、
+🔗 https://shukatsu-agent-nine.vercel.app
 
-面接日程
-ES締切
-Webテスト
-説明会
-OB・OG訪問
-企業研究
-マイページ情報
+---
 
-などを並行して管理する必要があります。
+## Features
 
-しかし実際には、
+### 💬 AI Chat Registration
 
-Google Calendar
-Notion
-Excel
-メモアプリ
-各企業のマイページ
-
-など複数のサービスに情報が分散し、管理コストが高くなりがちです。
-
-Shukatsu Agent は、こうした情報を一元化し、
-
-「就活のための Personal CRM」
-
-として機能することを目指しています。
-
-主な機能
-AIチャットによる予定登録
-
-自然言語から予定を自動生成します。
+自然言語から予定を自動登録
 
 例：
 
+```text
 明日15時にKPMGの一次面接がある
-
 ソニーのES締切は来週金曜日
+```
 
-このメールから予定を登録して
+AI が以下を自動抽出：
 
-AI が企業名、日時、イベント種別を解析し、自動で予定を作成します。
+- 企業名
+- 日時
+- イベント種別
+- リマインダー
 
-ダッシュボード
+---
 
-現在の就活状況を一覧表示します。
+### 🏠 Dashboard
 
-本日の予定
-今週の予定
-選考中企業数
-直近の締切
+現在の就活状況を表示
 
-を一目で確認できます。
+- 今日の予定
+- 今週の予定
+- 選考中企業数
+- 直近の締切
 
-カレンダー管理
+---
 
-面接、ES締切、説明会などの予定をカレンダー形式で管理できます。
+### 📅 Calendar
 
-Google Calendar と連携することで、外部カレンダーとの同期も可能です。
+月表示カレンダー
 
-選考進捗管理
+管理可能：
 
-企業ごとの選考状況を Kanban ボードで管理できます。
+- 面接
+- ES締切
+- 説明会
+- Webテスト
 
+---
+
+### 📊 Recruiting Pipeline
+
+Kanban 形式の選考管理
+
+```text
 気になる
 ↓
 説明会
@@ -91,180 +82,161 @@ GD
 最終面接
 ↓
 内定
+```
 
-ドラッグ＆ドロップによる直感的な操作に対応しています。
+---
 
-企業別メモ
+### 📝 Company Notes
 
-企業ごとに独立したメモを保存できます。
+企業ごとのメモ管理
 
-管理例：
+- 企業研究
+- 志望動機
+- 面接質問
+- OB訪問記録
 
-企業研究
-面接対策
-志望動機
-面接で聞かれた質問
-OB訪問内容
-マイページ情報管理
+---
 
-企業ごとのログイン情報を管理できます。
+### 🔑 MyPage Manager
 
-保存項目：
+企業ごとの
 
-URL
-ログインID
-メモ
+- URL
+- Login ID
+- Memo
 
-また、企業から届いたメールを AI が解析し、自動で情報を抽出することも可能です。
+を保存
 
-全文検索
+AI によるメール解析にも対応
 
-企業名、予定、メモを横断検索できます。
+---
 
-企業数が増えても必要な情報へ素早くアクセスできます。
+### 🔍 Global Search
 
-クラウド同期・バックアップ
+横断検索
 
-データはローカルに保存されます。
+- 企業
+- メモ
+- 予定
 
-さらに、
+---
 
-クラウド同期
-JSON エクスポート
-JSON インポート
+### ☁️ Cloud Sync
 
-に対応しており、端末変更時にもデータを引き継げます。
+クラウド同期対応
 
-技術スタック
-Category	Technology
-Frontend	HTML / CSS / JavaScript
-AI	Groq API (Llama 3.3 70B)
-Calendar	Google Calendar API
-Authentication	Google OAuth 2.0
-Backend	Vercel Serverless Functions
-Hosting	Vercel
-Demo
+同期可能：
 
-https://shukatsu-agent-nine.vercel.app
+- 予定
+- メモ
+- 企業情報
+- 選考状況
 
-🇨🇳 中文说明
-项目简介
+---
 
-Shukatsu Agent 是一个面向日本求职场景的 AI 管理平台。
+### 💾 Backup / Restore
 
-它不仅可以管理面试、ES 截止日期和说明会安排，还可以统一管理企业进度、企业研究笔记、MyPage 登录信息以及 Google Calendar 日程同步。
+JSON Export / Import
 
-用户只需通过自然语言聊天，即可完成大部分信息录入与管理工作。
+---
 
-为什么开发这个项目？
+### 📅 Google Calendar Integration
 
-对于日本新卒求职者来说，往往需要同时管理十几甚至几十家企业。
+Google Calendar 自動連携
 
-这些信息通常分散在：
+- イベント作成
+- リマインダー設定
+- トークン自動更新
 
-Google Calendar
-Notion
-Excel
-备忘录
-企业 MyPage
+---
 
-之间。
+## Tech Stack
 
-随着投递企业增加，信息管理成本会迅速上升。
+| Category | Technology |
+|-----------|-----------|
+| Frontend | HTML / CSS / Vanilla JavaScript |
+| AI | Groq API (Llama 3.3 70B) |
+| Calendar | Google Calendar API |
+| Auth | Google OAuth 2.0 |
+| Backend | Vercel Serverless Functions |
+| Hosting | Vercel |
 
-Shukatsu Agent 希望将这些内容整合到同一个系统中，并通过 AI 自动化处理重复性的记录工作。
+---
 
-项目定位为：
+## Self Hosting
 
-面向日本求职场景的个人 CRM（Candidate Relationship Management）系统。
+### 1. Clone Repository
 
-核心功能
-AI 智能录入
+```bash
+git clone https://github.com/yourname/shukatsu-agent.git
+```
 
-支持通过自然语言自动创建：
+### 2. Deploy to Vercel
 
-面试
-ES 截止日期
-说明会
-Web Test
-Group Discussion
+Import project into Vercel.
 
-例如：
+### 3. Configure Environment Variables
 
-明天下午三点有丰田一面
+```env
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+REDIRECT_URI=
+```
 
-索尼ES下周五截止
+### 4. Configure Google OAuth
 
-帮我从这封邮件里提取安排
-求职仪表盘
+Register Redirect URI:
 
-集中展示：
+```text
+https://your-app.vercel.app/api/callback
+```
 
-今日安排
-本周安排
-正在进行中的企业
-即将到来的截止日期
+### 5. Launch
 
-帮助用户快速了解当前求职状态。
+Open application and enter your Groq API Key.
 
-企业进度管理
+---
 
-采用 Kanban 看板模式管理企业流程：
+## Project Structure
 
-感兴趣
-↓
-说明会
-↓
-OB/OG访问
-↓
-ES提交
-↓
-Web Test
-↓
-GD
-↓
-一面
-↓
-二面
-↓
-终面
-↓
-获得 Offer
-企业研究与面试笔记
+```text
+shukatsu-agent.html
 
-支持为每家企业建立独立记录。
+api/
+├── callback.js
+├── refresh-token.js
+├── sync.js
 
-包括：
+vercel.json
+```
 
-企业分析
-志望动机素材
-面试问题整理
-面试复盘
-OB访谈记录
-MyPage 信息管理
+---
 
-统一保存：
+# 🇨🇳 中文说明
 
-登录网址
-登录 ID
-备注信息
-
-同时支持 AI 自动从企业邮件中提取相关内容。
-
-云同步与数据备份
+Shukatsu Agent 是一个面向日本求职（新卒就活）的 AI 管理平台。
 
 支持：
 
-云端同步
-JSON 导出
-JSON 导入
+- AI 自动录入面试与 ES 截止日期
+- 企业进度看板管理
+- 企业研究笔记
+- MyPage 登录信息管理
+- Google Calendar 同步
+- 云同步与数据备份
 
-方便跨设备使用和长期保存。
+项目目标是将原本分散在：
 
-项目定位
+- Google Calendar
+- Notion
+- Excel
+- 备忘录
+- 企业 MyPage
 
-Shukatsu Agent 并非单纯的 AI 聊天工具。
+中的信息统一到一个平台中进行管理。
 
-它更像是一个专门针对日本求职场景设计的：
+---
 
-AI + 求职管理系统 + 个人 CRM 平台。
+## License
+
+MIT License
