@@ -348,9 +348,11 @@
           <select id="memo-company-tag" onchange="saveMemo()" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text2);border-radius:5px;padding:3px 8px;font-size:11px;font-family:var(--font);outline:none;">
             <option value="">会社タグなし</option>
           </select>
+          <button id="memo-mode-btn" onclick="toggleMemoMode()" title="リンク表示/編集切替" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text2);border-radius:5px;padding:3px 10px;font-size:11px;font-family:var(--font);cursor:pointer;">🔗 リンク表示</button>
           <button id="delete-memo-btn" onclick="deleteMemo()" title="削除">🗑</button>
         </div>
-        <textarea id="memo-content" placeholder="ここにメモを入力..." oninput="saveMemo()"></textarea>
+        <textarea id="memo-content" placeholder="ここにメモを入力...（URLは自動でリンクになります）" oninput="saveMemo()"></textarea>
+        <div id="memo-preview" style="display:none;flex:1;overflow-y:auto;padding:20px 24px;font-size:14px;line-height:1.8;white-space:pre-wrap;color:var(--text);"></div>
       </div>
     </div>
   </div>
@@ -748,7 +750,19 @@ function renderCalendar() {
 }
 
 // ─── Progress Board ───────────────────────────────────────
-const BOARD_STAGES = ['気になる・説明会','OB・OG訪問', 'ES提出', 'Webテスト', 'GD','一次面接', '二次面接','最終面接', '内定'];
+const BOARD_STAGES = ['気になる・説明会', 'OB・OG訪問', 'ES提出', 'Webテスト', 'GD', '一次面接', '二次面接', '最終面接', '内定'];
+// Migrate old stage names to new ones so existing cards don't disappear
+(function migrateStages() {
+  const map = { '気になる': '気になる・説明会', '説明会': '気になる・説明会' };
+  let changed = false;
+  companies.forEach(c => {
+    if (!BOARD_STAGES.includes(c.stage)) {
+      c.stage = map[c.stage] || BOARD_STAGES[0];
+      changed = true;
+    }
+  });
+  if (changed) localStorage.setItem('shukatsu_companies', JSON.stringify(companies));
+})();
 function saveCompanies() { localStorage.setItem('shukatsu_companies', JSON.stringify(companies)); }
 let draggedCompanyId = null;
 
@@ -836,7 +850,36 @@ function openMemo(id) {
   document.getElementById('memo-title-input').value = m.title || '';
   document.getElementById('memo-content').value = m.content || '';
   document.getElementById('memo-company-tag').value = m.company || '';
+  memoPreviewMode = false;
+  applyMemoMode();
   renderMemoList();
+}
+let memoPreviewMode = false;
+function toggleMemoMode() {
+  memoPreviewMode = !memoPreviewMode;
+  applyMemoMode();
+}
+function applyMemoMode() {
+  const ta = document.getElementById('memo-content');
+  const pv = document.getElementById('memo-preview');
+  const btn = document.getElementById('memo-mode-btn');
+  if (memoPreviewMode) {
+    pv.innerHTML = linkify(ta.value);
+    ta.style.display = 'none';
+    pv.style.display = 'block';
+    btn.textContent = '✏️ 編集';
+  } else {
+    ta.style.display = 'block';
+    pv.style.display = 'none';
+    btn.textContent = '🔗 リンク表示';
+  }
+}
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function linkify(text) {
+  const escaped = escapeHtml(text);
+  return escaped.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:var(--accent);text-decoration:underline;">$1</a>');
 }
 function saveMemo() {
   if (!currentMemoId) return;
@@ -895,4 +938,3 @@ setInterval(checkReminders, 60000);
 </script>
 </body>
 </html>
-
