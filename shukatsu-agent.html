@@ -460,6 +460,13 @@
       <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;letter-spacing:0.3px;">詳細メモ（面接の質問、準備事項など）</label>
       <textarea id="detail-detail" placeholder="面接の質問メモ、準備リスト、感想など..." style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:9px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;resize:vertical;min-height:120px;line-height:1.6;"></textarea>
     </div>
+    <div id="detail-company-memo" style="display:none;margin-bottom:20px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;">
+      <div style="display:flex;align-items:center;margin-bottom:10px;">
+        <span style="font-size:12px;color:var(--text2);letter-spacing:0.3px;">🏢 <span id="detail-cm-title"></span> の企業別メモ</span>
+        <button onclick="openCompanyMemoFromEvent()" style="margin-left:auto;background:none;border:1px solid var(--border2);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:11px;font-family:var(--font);cursor:pointer;">✏️ 編集</button>
+      </div>
+      <div id="detail-cm-body" style="font-size:12px;line-height:1.7;color:var(--text);"></div>
+    </div>
     <div style="display:flex;gap:8px;">
       <button onclick="deleteEventFromDetail()" style="padding:10px 14px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--red);font-family:var(--font);font-size:14px;cursor:pointer;">🗑 削除</button>
       <button id="detail-done-btn" onclick="markDoneFromDetail()" style="padding:10px 16px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--amber);font-family:var(--font);font-size:14px;cursor:pointer;">✓ 完了</button>
@@ -831,7 +838,7 @@ function buildSystemPrompt() {
 \`\`\`json
 {"company":"会社名","type":"面接|ES|説明会|筆記|その他","datetime":"YYYY-MM-DDTHH:mm:ss","place":"場所（あれば）","summary":"メールの要点を2〜4行で箇条書き要約","reminders":[1440,60],"loginUrl":"マイページURL（あれば）","loginId":"ログインID（あれば）","loginNote":"パスワードのヒントなど（あれば）"}
 \`\`\`
-3. メールが貼られた場合は、summaryに「何の連絡か・何をすべきか・持ち物や注意点」など要点を簡潔にまとめること。場所があればplaceに入れる。
+3. メールが貼られた場合は、summaryに要点をできるだけ漏れなくまとめること。含めるべき項目: 選考の種類・内容、日時、場所/形式（オンライン/対面）、持ち物・準備、提出物や締切、所要時間、服装、連絡先、注意事項、マイページ/ログイン関連の案内など。箇条書きで、重要な情報を省略しない。場所があればplaceにも入れる。
 4. メールにマイページのURL・ID・ログイン情報があれば loginUrl / loginId / loginNote に含める。情報がない項目はJSONに含めないこと（"NONE"や"なし"と書かない）。
 5. 複数の予定があれば、それぞれを別のJSONブロックで返す。
 6. 日時が本文から特定できない場合は、JSONを作らずにユーザーに日時を質問すること。推測で適当な日時を入れない。
@@ -1088,8 +1095,32 @@ function openEventDetail(id) {
   document.getElementById('detail-status').textContent = ev.status === 'done' ? '✓ 完了' : '進行中';
   document.getElementById('detail-status').style.color = ev.status === 'done' ? 'var(--accent)' : 'var(--text2)';
   document.getElementById('detail-done-btn').style.display = ev.status === 'done' ? 'none' : 'block';
+
+  // Show linked company memo (if this event's company has a company memo)
+  const cmBox = document.getElementById('detail-company-memo');
+  const m = memos.find(mm => mm.isCompanyMemo && sameCompany(mm.company, ev.company));
+  if (m) {
+    document.getElementById('detail-cm-title').textContent = ev.company;
+    let parts = [];
+    if (m.loginUrl) parts.push(`🔗 <a href="${m.loginUrl}" target="_blank" style="color:var(--accent);">${m.loginUrl}</a>`);
+    if (m.loginId) parts.push(`🆔 ${m.loginId}`);
+    if (m.loginNote) parts.push(`🔑 ${m.loginNote}`);
+    if (m.content) parts.push(linkify(m.content));
+    document.getElementById('detail-cm-body').innerHTML = parts.length ? parts.join('<br>') : '<span style="color:var(--text3)">内容なし</span>';
+    cmBox.dataset.memoId = m.id;
+    cmBox.style.display = 'block';
+  } else {
+    cmBox.style.display = 'none';
+  }
+
   document.getElementById('event-detail-modal').dataset.id = id;
   document.getElementById('event-detail-modal').classList.add('open');
+}
+function openCompanyMemoFromEvent() {
+  const memoId = parseInt(document.getElementById('detail-company-memo').dataset.memoId);
+  document.getElementById('event-detail-modal').classList.remove('open');
+  showView('memo', document.querySelectorAll('header nav button')[3]);
+  openMemo(memoId);
 }
 function saveEventDetail() {
   const id = parseInt(document.getElementById('event-detail-modal').dataset.id);
@@ -1550,7 +1581,7 @@ function doSearch(q) {
   const hits = [];
   events.forEach(e => {
     if ((e.company||'').toLowerCase().includes(q) || (e.type||'').toLowerCase().includes(q) || (e.note||'').toLowerCase().includes(q)) {
-      hits.push({ icon:'📅', title:`${e.company} ${e.type}`, sub:formatDatetime(e.datetime), action:`showView('calendar',document.querySelectorAll('header nav button')[1]);closeSearch()` });
+      hits.push({ icon:'📅', title:`${e.company} ${e.type}`, sub:formatDatetime(e.datetime), action:`showView('calendar',document.querySelectorAll('header nav button')[2]);closeSearch()` });
     }
   });
   memos.forEach(m => {
@@ -1579,7 +1610,7 @@ function closeSearch() {
   document.getElementById('global-search').value = '';
 }
 function openMemoFromSearch(id) {
-  showView('memo', document.querySelectorAll('header nav button')[2]);
+  showView('memo', document.querySelectorAll('header nav button')[3]);
   openMemo(id);
   closeSearch();
 }
@@ -1682,4 +1713,3 @@ if (settings.syncKey) cloudPull(false);
 </script>
 </body>
 </html>
-
