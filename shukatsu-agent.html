@@ -437,6 +437,12 @@
   </div>
 </main>
 
+<!-- Undo Toast -->
+<div id="undo-toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:14px;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,0.4);opacity:0;transition:all 0.25s;pointer-events:none;">
+  <span id="undo-toast-msg" style="font-size:13px;color:var(--text);"></span>
+  <button onclick="performUndo()" style="background:none;border:none;color:var(--accent);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;padding:0;">↩ 元に戻す</button>
+</div>
+
 <!-- Event Detail Modal -->
 <div id="event-detail-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:100;" class="detail-modal">
   <div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;">
@@ -969,6 +975,32 @@ async function deleteFromGoogleCalendar(gcalId) {
   } catch(e) { console.error('Calendar delete failed:', e); }
 }
 function saveEvents() { localStorage.setItem('shukatsu_events', JSON.stringify(events)); cloudPush(); }
+
+// ─── Undo system ──────────────────────────────────────────
+let undoAction = null;
+let undoTimer = null;
+function showUndo(message, restoreFn) {
+  undoAction = restoreFn;
+  document.getElementById('undo-toast-msg').textContent = message;
+  const toast = document.getElementById('undo-toast');
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateX(-50%) translateY(0)';
+  toast.style.pointerEvents = 'auto';
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndo, 6000);
+}
+function hideUndo() {
+  const toast = document.getElementById('undo-toast');
+  toast.style.opacity = '0';
+  toast.style.transform = 'translateX(-50%) translateY(100px)';
+  toast.style.pointerEvents = 'none';
+  undoAction = null;
+}
+function performUndo() {
+  if (undoAction) { undoAction(); }
+  clearTimeout(undoTimer);
+  hideUndo();
+}
 function filterEvents(f, btn) {
   currentFilter = f;
   document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
@@ -1083,11 +1115,16 @@ async function deleteEventFromDetail() {
   const ev = events.find(e=>e.id===id);
   if (!ev) return;
   if (!confirm(`「${ev.company} ${ev.type}」を削除しますか？\nGoogle Calendar からも削除されます。`)) return;
+  const deletedEvent = { ...ev };
   if (ev.gcalId) await deleteFromGoogleCalendar(ev.gcalId);
   events = events.filter(e => e.id !== id);
   saveEvents(); renderEvents();
   document.getElementById('event-detail-modal').classList.remove('open');
-  addMessage('assistant', `🗑 ${ev.company} の ${ev.type} を削除しました。`);
+  showUndo(`「${deletedEvent.company} ${deletedEvent.type}」を削除しました`, () => {
+    delete deletedEvent.gcalId; // calendar entry already gone; re-add locally only
+    events.push(deletedEvent);
+    saveEvents(); renderEvents();
+  });
 }
 
 // ─── Calendar ─────────────────────────────────────────────
@@ -1236,8 +1273,13 @@ function deleteCompany(id) {
   const c = companies.find(c => c.id === id);
   if (!c) return;
   if (confirm(`「${c.name}」を削除しますか？（メモは残ります）`)) {
+    const deleted = { ...c };
     companies = companies.filter(x => x.id !== id);
     saveCompanies(); renderBoard();
+    showUndo(`「${deleted.name}」を削除しました`, () => {
+      companies.push(deleted);
+      saveCompanies(); renderBoard();
+    });
   }
 }
 // Click a company card -> open or create its memo, then jump to memo view
@@ -1318,9 +1360,14 @@ function cmDeleteCompany() {
   const c = companies.find(c => c.id === cmCurrentCompanyId);
   if (!c) return;
   if (!confirm(`「${c.name}」を削除しますか？（メモは残ります）`)) return;
+  const deleted = { ...c };
   companies = companies.filter(x => x.id !== cmCurrentCompanyId);
   saveCompanies(); renderBoard();
   closeCompanyModal();
+  showUndo(`「${deleted.name}」を削除しました`, () => {
+    companies.push(deleted);
+    saveCompanies(); renderBoard();
+  });
 }
 function closeCompanyModal() {
   document.getElementById('company-modal').classList.remove('open');
@@ -1443,12 +1490,20 @@ function saveMemo() {
 function deleteMemo() {
   if (!currentMemoId) return;
   if (!confirm('このメモを削除しますか？')) return;
+  const deleted = memos.find(m=>m.id===currentMemoId);
+  const deletedCopy = deleted ? { ...deleted } : null;
   memos = memos.filter(m=>m.id!==currentMemoId);
   currentMemoId = null;
   saveMemos();
   document.getElementById('memo-empty').style.display = 'flex';
   document.getElementById('memo-edit-area').style.display = 'none';
   renderMemoList();
+  if (deletedCopy) {
+    showUndo('メモを削除しました', () => {
+      memos.unshift(deletedCopy);
+      saveMemos(); renderMemoList();
+    });
+  }
 }
 
 // ─── Auto refresh Google token ────────────────────────────
