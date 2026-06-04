@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -145,6 +145,7 @@
   .event-item.soon { border-left: 2px solid var(--amber); }
   .event-item.ok { border-left: 2px solid var(--accent); }
   .event-item.done { opacity: 0.45; }
+  .event-item.past { opacity: 0.5; border-left: 2px solid var(--text3); }
   .ei-top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
   .ei-company { font-size: 13px; font-weight: 500; }
   .type-badge { font-size: 10px; padding: 1px 7px; border-radius: 4px; font-weight: 500; }
@@ -457,6 +458,49 @@
       <button onclick="closeEventDetail()" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--font);font-size:14px;cursor:pointer;">キャンセル</button>
       <button id="detail-done-btn" onclick="markDoneFromDetail()" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--amber);font-family:var(--font);font-size:14px;cursor:pointer;">✓ 完了にする</button>
       <button onclick="saveEventDetail()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--accent);color:#0d0f14;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Company Detail Modal -->
+<div id="company-modal" class="detail-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:100;">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:24px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <span id="cm-name" style="font-size:20px;font-weight:700;color:var(--accent);"></span>
+      <select id="cm-stage" onchange="cmChangeStage()" style="margin-left:auto;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:5px 10px;font-size:12px;font-family:var(--font);outline:none;"></select>
+      <button onclick="closeCompanyModal()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+
+    <!-- Events for this company -->
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;letter-spacing:0.3px;">📅 関連する予定</div>
+    <div id="cm-events" style="margin-bottom:20px;"></div>
+
+    <!-- Login info -->
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;letter-spacing:0.3px;">🔑 マイページ情報</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:20px;">
+      <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;">
+        <span style="font-size:11px;color:var(--text3);width:36px;">URL</span>
+        <input type="text" id="cm-url" placeholder="https://..." oninput="cmSaveMemo()" style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;">
+        <a id="cm-url-link" href="#" target="_blank" style="font-size:14px;text-decoration:none;opacity:0.4;pointer-events:none;" title="開く">↗</a>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;">
+        <span style="font-size:11px;color:var(--text3);width:36px;">ID</span>
+        <input type="text" id="cm-id" placeholder="ログインID" oninput="cmSaveMemo()" style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;">
+        <span onclick="cmCopyId()" style="font-size:13px;cursor:pointer;" title="コピー">📋</span>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span style="font-size:11px;color:var(--text3);width:36px;">メモ</span>
+        <input type="text" id="cm-loginnote" placeholder="パスワードのヒントなど" oninput="cmSaveMemo()" style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;">
+      </div>
+    </div>
+
+    <!-- Free notes -->
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;letter-spacing:0.3px;">📝 メモ（面接の質問・準備など）</div>
+    <textarea id="cm-content" placeholder="自由にメモ..." oninput="cmSaveMemo()" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--font);font-size:13px;line-height:1.7;outline:none;resize:vertical;min-height:120px;"></textarea>
+
+    <div style="display:flex;gap:8px;margin-top:18px;">
+      <button onclick="cmDeleteCompany()" style="padding:9px 16px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--font);font-size:13px;cursor:pointer;">会社を削除</button>
+      <button onclick="closeCompanyModal()" style="flex:1;padding:9px;border-radius:8px;border:none;background:var(--accent);color:#0d0f14;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;">閉じる</button>
     </div>
   </div>
 </div>
@@ -857,9 +901,11 @@ function renderEvents() {
   container.innerHTML = filtered.map(ev => {
     const validDate = !isNaN(new Date(ev.datetime).getTime());
     const diff = validDate ? (new Date(ev.datetime)-now)/86400000 : null;
+    const isPast = validDate && diff < 0 && ev.status !== 'done';
     let urgency='ok', countdown='';
     if (ev.status==='done') urgency='done';
     else if (!validDate) { urgency='ok'; countdown=`<div class="ei-countdown ok-text" style="color:var(--amber)">📌 日時未定</div>`; }
+    else if (isPast) { urgency='past'; countdown=`<div class="ei-countdown" style="color:var(--text3)">終了</div>`; }
     else if (diff<1) { urgency='urgent'; countdown=`<div class="ei-countdown urgent-text">⚠️ 今日！</div>`; }
     else if (diff<3) { urgency='soon'; countdown=`<div class="ei-countdown soon-text">⏰ あと${Math.ceil(diff)}日</div>`; }
     else countdown=`<div class="ei-countdown ok-text">あと${Math.ceil(diff)}日</div>`;
@@ -1011,24 +1057,89 @@ function deleteCompany(id) {
   }
 }
 // Click a company card -> open or create its memo, then jump to memo view
+let cmCurrentCompanyId = null;
 function openCompanyMemo(id) {
   const c = companies.find(c => c.id === id);
   if (!c) return;
+  cmCurrentCompanyId = id;
+  // ensure a linked memo exists
   let m = memos.find(m => m.company === c.name);
   if (!m) {
     m = { id: Date.now(), title: c.name, content: '', company: c.name, isCompanyMemo: true, updatedAt: Date.now() };
-    memos.unshift(m);
-    saveMemos();
+    memos.unshift(m); saveMemos();
+  } else { m.isCompanyMemo = true; }
+
+  document.getElementById('cm-name').textContent = c.name;
+  // stage dropdown
+  const stageSel = document.getElementById('cm-stage');
+  stageSel.innerHTML = BOARD_STAGES.map(s => `<option value="${s}"${s===c.stage?' selected':''}>${s}</option>`).join('');
+  // related events
+  const now = new Date();
+  const evs = events.filter(e => e.company === c.name).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+  const cmEvents = document.getElementById('cm-events');
+  if (evs.length) {
+    cmEvents.innerHTML = evs.map(e => {
+      const done = e.status === 'done';
+      const valid = !isNaN(new Date(e.datetime).getTime());
+      return `<div onclick="openEventDetail(${e.id})" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:6px;margin-bottom:6px;${done?'opacity:0.5;':''}">
+        <span class="type-badge type-${e.type||'その他'}">${e.type||'その他'}</span>
+        <span style="font-size:12px;color:var(--text2);font-family:var(--mono);">${valid?formatDatetime(e.datetime):'日時未定'}</span>
+        ${done?'<span style="margin-left:auto;font-size:11px;color:var(--accent);">✓ 完了</span>':''}
+      </div>`;
+    }).join('');
   } else {
-    m.isCompanyMemo = true;
-    saveMemos();
+    cmEvents.innerHTML = `<div style="font-size:12px;color:var(--text3);padding:8px 0;">関連する予定はまだありません</div>`;
   }
-  // switch to memo view
-  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('header nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('memo-view').classList.add('active');
-  document.querySelectorAll('header nav button').forEach(b => { if (b.textContent.includes('メモ')) b.classList.add('active'); });
-  openMemo(m.id);
+  // login + content
+  document.getElementById('cm-url').value = m.loginUrl || '';
+  document.getElementById('cm-id').value = m.loginId || '';
+  document.getElementById('cm-loginnote').value = m.loginNote || '';
+  document.getElementById('cm-content').value = m.content || '';
+  cmUpdateUrlLink();
+  document.getElementById('company-modal').classList.add('open');
+}
+function getCmMemo() {
+  const c = companies.find(c => c.id === cmCurrentCompanyId);
+  if (!c) return null;
+  return memos.find(m => m.company === c.name);
+}
+function cmSaveMemo() {
+  const m = getCmMemo();
+  if (!m) return;
+  m.loginUrl = document.getElementById('cm-url').value.trim();
+  m.loginId = document.getElementById('cm-id').value.trim();
+  m.loginNote = document.getElementById('cm-loginnote').value.trim();
+  m.content = document.getElementById('cm-content').value;
+  m.updatedAt = Date.now();
+  m.isCompanyMemo = true;
+  saveMemos(); cmUpdateUrlLink();
+}
+function cmUpdateUrlLink() {
+  const url = document.getElementById('cm-url').value.trim();
+  const link = document.getElementById('cm-url-link');
+  if (url) { link.href = url; link.style.opacity = '1'; link.style.pointerEvents = 'auto'; }
+  else { link.href = '#'; link.style.opacity = '0.4'; link.style.pointerEvents = 'none'; }
+}
+function cmCopyId() {
+  const id = document.getElementById('cm-id').value.trim();
+  if (id) { navigator.clipboard.writeText(id); }
+}
+function cmChangeStage() {
+  const c = companies.find(c => c.id === cmCurrentCompanyId);
+  if (!c) return;
+  c.stage = document.getElementById('cm-stage').value;
+  saveCompanies(); renderBoard();
+}
+function cmDeleteCompany() {
+  const c = companies.find(c => c.id === cmCurrentCompanyId);
+  if (!c) return;
+  if (!confirm(`「${c.name}」を削除しますか？（メモは残ります）`)) return;
+  companies = companies.filter(x => x.id !== cmCurrentCompanyId);
+  saveCompanies(); renderBoard();
+  closeCompanyModal();
+}
+function closeCompanyModal() {
+  document.getElementById('company-modal').classList.remove('open');
 }
 function boardDragStart(e, id) { draggedCompanyId = id; e.target.classList.add('dragging'); }
 function boardDragEnd(e) { e.target.classList.remove('dragging'); }
@@ -1332,4 +1443,3 @@ if (settings.syncKey) cloudPull(false);
 </script>
 </body>
 </html>
-
