@@ -307,6 +307,7 @@
     <button onclick="exportData()" title="バックアップをダウンロード">💾</button>
     <button onclick="document.getElementById('import-file').click()" title="バックアップを読み込む">📂</button>
     <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    <button onclick="openTrash()" title="ゴミ箱">🗑</button>
     <button onclick="openSettings()">⚙️ 設定</button>
   </nav>
 </header>
@@ -518,6 +519,18 @@
   </div>
 </div>
 
+<!-- Trash Modal -->
+<div id="trash-modal" class="detail-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:100;">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <span style="font-size:18px;font-weight:700;">🗑 ゴミ箱</span>
+      <button onclick="closeTrash()" style="margin-left:auto;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px;">削除したものを復元できます（最新100件まで保存）</div>
+    <div id="trash-list"></div>
+  </div>
+</div>
+
 <!-- Settings Modal -->
 <div id="settings-modal">
   <div class="modal-box">
@@ -558,6 +571,13 @@ let settings = JSON.parse(localStorage.getItem('shukatsu_settings') || '{}');
 let currentFilter = 'all';
 let currentMemoId = null;
 let companies = JSON.parse(localStorage.getItem('shukatsu_companies') || '[]');
+let trash = JSON.parse(localStorage.getItem('shukatsu_trash') || '[]');
+function saveTrash() { localStorage.setItem('shukatsu_trash', JSON.stringify(trash)); cloudPush(); }
+function addToTrash(type, data) {
+  trash.unshift({ id: Date.now()+Math.random(), type, data, deletedAt: new Date().toISOString() });
+  if (trash.length > 100) trash = trash.slice(0, 100);
+  saveTrash();
+}
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 
@@ -1008,6 +1028,53 @@ function performUndo() {
   clearTimeout(undoTimer);
   hideUndo();
 }
+
+// ─── Trash ────────────────────────────────────────────────
+function openTrash() {
+  renderTrash();
+  document.getElementById('trash-modal').classList.add('open');
+}
+function closeTrash() {
+  document.getElementById('trash-modal').classList.remove('open');
+}
+function renderTrash() {
+  const list = document.getElementById('trash-list');
+  if (!trash.length) {
+    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text3);"><div style="font-size:36px;margin-bottom:10px;">🗑</div>ゴミ箱は空です</div>`;
+    return;
+  }
+  const typeLabel = { event: '📅 予定', company: '🏢 会社', memo: '📝 メモ' };
+  list.innerHTML = trash.map(t => {
+    let title = '';
+    if (t.type === 'event') title = `${t.data.company} ${t.data.type}`;
+    else if (t.type === 'company') title = t.data.name;
+    else if (t.type === 'memo') title = t.data.title || '無題';
+    const when = new Date(t.deletedAt).toLocaleString('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:8px;margin-bottom:8px;">
+      <span style="font-size:11px;color:var(--text3);">${typeLabel[t.type]||''}</span>
+      <span style="font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${title}</span>
+      <span style="font-size:10px;color:var(--text3);">${when}</span>
+      <button onclick="restoreFromTrash('${t.id}')" style="background:none;border:1px solid var(--border2);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:11px;font-family:var(--font);cursor:pointer;">復元</button>
+      <button onclick="deleteFromTrash('${t.id}')" style="background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;" title="完全に削除">✕</button>
+    </div>`;
+  }).join('');
+}
+function restoreFromTrash(trashId) {
+  const item = trash.find(t => String(t.id) === String(trashId));
+  if (!item) return;
+  if (item.type === 'event') { events.push(item.data); saveEvents(); renderEvents(); }
+  else if (item.type === 'company') { companies.push(item.data); saveCompanies(); renderBoard(); }
+  else if (item.type === 'memo') { memos.unshift(item.data); saveMemos(); renderMemoList(); }
+  trash = trash.filter(t => String(t.id) !== String(trashId));
+  saveTrash();
+  renderTrash();
+}
+function deleteFromTrash(trashId) {
+  if (!confirm('完全に削除しますか？この操作は元に戻せません。')) return;
+  trash = trash.filter(t => String(t.id) !== String(trashId));
+  saveTrash();
+  renderTrash();
+}
 function filterEvents(f, btn) {
   currentFilter = f;
   document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
@@ -1094,7 +1161,15 @@ function openEventDetail(id) {
   document.getElementById('detail-detail').value = ev.detail || '';
   document.getElementById('detail-status').textContent = ev.status === 'done' ? '✓ 完了' : '進行中';
   document.getElementById('detail-status').style.color = ev.status === 'done' ? 'var(--accent)' : 'var(--text2)';
-  document.getElementById('detail-done-btn').style.display = ev.status === 'done' ? 'none' : 'block';
+  const doneBtn = document.getElementById('detail-done-btn');
+  doneBtn.style.display = 'block';
+  if (ev.status === 'done') {
+    doneBtn.textContent = '↩ 未完了に戻す';
+    doneBtn.style.color = 'var(--accent)';
+  } else {
+    doneBtn.textContent = '✓ 完了';
+    doneBtn.style.color = 'var(--amber)';
+  }
 
   // Show linked company memo (if this event's company has a company memo)
   const cmBox = document.getElementById('detail-company-memo');
@@ -1138,7 +1213,9 @@ function markDoneFromDetail() {
   const id = parseInt(document.getElementById('event-detail-modal').dataset.id);
   const ev = events.find(e=>e.id===id);
   if (!ev) return;
-  ev.status = 'done'; saveEvents(); renderEvents();
+  // toggle: done -> back to pending, otherwise -> done
+  ev.status = (ev.status === 'done') ? 'pending' : 'done';
+  saveEvents(); renderEvents();
   document.getElementById('event-detail-modal').classList.remove('open');
 }
 async function deleteEventFromDetail() {
@@ -1150,11 +1227,13 @@ async function deleteEventFromDetail() {
   if (ev.gcalId) await deleteFromGoogleCalendar(ev.gcalId);
   events = events.filter(e => e.id !== id);
   saveEvents(); renderEvents();
+  delete deletedEvent.gcalId;
+  addToTrash('event', deletedEvent);
   document.getElementById('event-detail-modal').classList.remove('open');
   showUndo(`「${deletedEvent.company} ${deletedEvent.type}」を削除しました`, () => {
-    delete deletedEvent.gcalId; // calendar entry already gone; re-add locally only
     events.push(deletedEvent);
     saveEvents(); renderEvents();
+    trash = trash.filter(t => !(t.type==='event' && t.data.id===deletedEvent.id)); saveTrash();
   });
 }
 
@@ -1307,9 +1386,11 @@ function deleteCompany(id) {
     const deleted = { ...c };
     companies = companies.filter(x => x.id !== id);
     saveCompanies(); renderBoard();
+    addToTrash('company', deleted);
     showUndo(`「${deleted.name}」を削除しました`, () => {
       companies.push(deleted);
       saveCompanies(); renderBoard();
+      trash = trash.filter(t => !(t.type==='company' && t.data.id===deleted.id)); saveTrash();
     });
   }
 }
@@ -1395,9 +1476,11 @@ function cmDeleteCompany() {
   companies = companies.filter(x => x.id !== cmCurrentCompanyId);
   saveCompanies(); renderBoard();
   closeCompanyModal();
+  addToTrash('company', deleted);
   showUndo(`「${deleted.name}」を削除しました`, () => {
     companies.push(deleted);
     saveCompanies(); renderBoard();
+    trash = trash.filter(t => !(t.type==='company' && t.data.id===deleted.id)); saveTrash();
   });
 }
 function closeCompanyModal() {
@@ -1530,9 +1613,11 @@ function deleteMemo() {
   document.getElementById('memo-edit-area').style.display = 'none';
   renderMemoList();
   if (deletedCopy) {
+    addToTrash('memo', deletedCopy);
     showUndo('メモを削除しました', () => {
       memos.unshift(deletedCopy);
       saveMemos(); renderMemoList();
+      trash = trash.filter(t => !(t.type==='memo' && t.data.id===deletedCopy.id)); saveTrash();
     });
   }
 }
@@ -1623,7 +1708,7 @@ document.addEventListener('click', e => {
 // ─── Export / Import ──────────────────────────────────────
 function exportData() {
   const data = {
-    events, memos, companies,
+    events, memos, companies, trash,
     exportedAt: new Date().toISOString(),
     version: 1
   };
@@ -1668,7 +1753,7 @@ function cloudPush() {
     try {
       const payload = {
         key: 'user_' + settings.syncKey,
-        value: { events, memos, companies },
+        value: { events, memos, companies, trash },
         updated_at: new Date().toISOString()
       };
       await fetch(`${SUPABASE_URL}/rest/v1/app_data`, {
@@ -1697,6 +1782,7 @@ async function cloudPull(showMsg) {
       if (d.events) { events = d.events; localStorage.setItem('shukatsu_events', JSON.stringify(events)); }
       if (d.memos) { memos = d.memos; localStorage.setItem('shukatsu_memos', JSON.stringify(memos)); }
       if (d.companies) { companies = d.companies; localStorage.setItem('shukatsu_companies', JSON.stringify(companies)); }
+      if (d.trash) { trash = d.trash; localStorage.setItem('shukatsu_trash', JSON.stringify(trash)); }
       renderEvents(); renderMemoList();
       if (showMsg) addMessage('assistant', '☁️ クラウドからデータを復元しました！');
     } else if (showMsg) {
