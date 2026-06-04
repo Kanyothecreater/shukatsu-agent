@@ -830,7 +830,8 @@ function buildSystemPrompt() {
 5. 複数の予定があれば、それぞれを別のJSONブロックで返す。
 6. 日時が本文から特定できない場合は、JSONを作らずにユーザーに日時を質問すること。推測で適当な日時を入れない。
 7. 一覧を聞かれたら見やすく教える。
-8. 簡潔に返答する。`;
+8. 簡潔に返答する。
+9. 会社名は日本の就活で一般的な表記に統一する（英語名でもカタカナが一般的なら例: Accenture→アクセンチュア、Sony→ソニー）。`;
 }
 
 // ─── Event management ─────────────────────────────────────
@@ -1120,14 +1121,49 @@ function renderCalendar() {
 const BOARD_STAGES = ['気になる・説明会', 'OB・OG訪問', 'ES提出', 'Webテスト', 'GD', '一次面接', '二次面接', '最終面接', '内定'];
 
 // Fuzzy company-name matching: トヨタ ≈ トヨタ自動車 ≈ トヨタ株式会社
+// Common English <-> katakana company name aliases (Japanese 就活)
+const COMPANY_ALIASES = [
+  ['accenture','アクセンチュア'],
+  ['pwc','プライスウォーターハウスクーパース'],
+  ['deloitte','デロイト'],
+  ['ibm','アイビーエム'],
+  ['sony','ソニー'],
+  ['toyota','トヨタ'],
+  ['honda','ホンダ'],
+  ['panasonic','パナソニック'],
+  ['nec','エヌイーシー'],
+  ['nri','野村総合研究所'],
+  ['ntt','エヌティティ'],
+  ['kpmg','ケーピーエムジー'],
+  ['ey','アーンストアンドヤング'],
+  ['rakuten','楽天'],
+  ['mitsubishi','三菱'],
+  ['hitachi','日立'],
+  ['fujitsu','富士通'],
+  ['canon','キヤノン'],
+  ['nikon','ニコン'],
+  ['toshiba','東芝'],
+];
 function normalizeCompany(name) {
   if (!name) return '';
-  return String(name)
+  let s = String(name)
+    // full-width ASCII -> half-width
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
     .replace(/株式会社|有限会社|合同会社|（株）|\(株\)|㈱/g, '')
-    .replace(/グループ|ホールディングス|HD|自動車|商事|製作所|工業|電機|銀行/g, '')
-    .replace(/[\s　・,，.。]/g, '')
+    .replace(/グループ|ホールディングス|HD|自動車|商事|製作所|工業|電機|銀行|コンサルティング|ジャパン|日本/g, '')
+    .replace(/[\s　・,，.。&＆\-－—]/g, '')
     .toLowerCase()
     .trim();
+  // map known English alias to its katakana canonical form
+  for (const [en, ja] of COMPANY_ALIASES) {
+    if (s === en || s.includes(en)) return normalizeKana(ja);
+    if (s.includes(normalizeKana(ja))) return normalizeKana(ja);
+  }
+  return normalizeKana(s);
+}
+// hiragana -> katakana so the two scripts compare equal
+function normalizeKana(s) {
+  return String(s).replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
 }
 function sameCompany(a, b) {
   if (!a || !b) return false;
@@ -1591,3 +1627,4 @@ if (settings.syncKey) cloudPull(false);
 </script>
 </body>
 </html>
+
