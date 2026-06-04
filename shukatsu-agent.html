@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -840,7 +840,7 @@ async function confirmEvent(ev) {
 
   // If login info was extracted, save it into the company memo + ensure a board card exists
   if (ev.loginUrl || ev.loginId || ev.loginNote) {
-    let m = memos.find(m => m.company === ev.company);
+    let m = memos.find(m => sameCompany(m.company, ev.company));
     if (!m) {
       m = { id: Date.now()+1, title: ev.company, content: '', company: ev.company, isCompanyMemo: true, updatedAt: Date.now() };
       memos.unshift(m);
@@ -850,7 +850,7 @@ async function confirmEvent(ev) {
     if (ev.loginId) m.loginId = ev.loginId;
     if (ev.loginNote) m.loginNote = ev.loginNote;
     saveMemos();
-    if (!companies.find(c => c.name === ev.company)) {
+    if (!companies.find(c => sameCompany(c.name, ev.company))) {
       companies.push({ id: Date.now()+2, name: ev.company, stage: BOARD_STAGES[0] });
       saveCompanies();
     }
@@ -987,6 +987,23 @@ function renderCalendar() {
 
 // ─── Progress Board ───────────────────────────────────────
 const BOARD_STAGES = ['気になる・説明会', 'OB・OG訪問', 'ES提出', 'Webテスト', 'GD', '一次面接', '二次面接', '最終面接', '内定'];
+
+// Fuzzy company-name matching: トヨタ ≈ トヨタ自動車 ≈ トヨタ株式会社
+function normalizeCompany(name) {
+  if (!name) return '';
+  return String(name)
+    .replace(/株式会社|有限会社|合同会社|（株）|\(株\)|㈱/g, '')
+    .replace(/グループ|ホールディングス|HD|自動車|商事|製作所|工業|電機|銀行/g, '')
+    .replace(/[\s　・,，.。]/g, '')
+    .toLowerCase()
+    .trim();
+}
+function sameCompany(a, b) {
+  if (!a || !b) return false;
+  const na = normalizeCompany(a), nb = normalizeCompany(b);
+  if (!na || !nb) return false;
+  return na === nb || na.includes(nb) || nb.includes(na);
+}
 // Migrate old stage names to new ones so existing cards don't disappear
 (function migrateStages() {
   const map = { '気になる': '気になる・説明会', '説明会': '気になる・説明会' };
@@ -1007,9 +1024,9 @@ function renderBoard() {
   container.innerHTML = BOARD_STAGES.map((stage, idx) => {
     const cards = companies.filter(c => c.stage === stage);
     const cardsHtml = cards.map(c => {
-      const linkedMemo = memos.find(m => m.company === c.name);
+      const linkedMemo = memos.find(m => sameCompany(m.company, c.name));
       const nextEv = events
-        .filter(e => e.company === c.name && e.status !== 'done' && new Date(e.datetime) >= new Date())
+        .filter(e => sameCompany(e.company, c.name) && e.status !== 'done' && new Date(e.datetime) >= new Date())
         .sort((a,b) => new Date(a.datetime) - new Date(b.datetime))[0];
       const nextEvHtml = nextEv
         ? `<div class="board-card-meta" style="color:var(--accent);margin-top:4px;">📅 ${nextEv.type} ${new Date(nextEv.datetime).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})}</div>`
@@ -1063,7 +1080,7 @@ function openCompanyMemo(id) {
   if (!c) return;
   cmCurrentCompanyId = id;
   // ensure a linked memo exists
-  let m = memos.find(m => m.company === c.name);
+  let m = memos.find(m => sameCompany(m.company, c.name));
   if (!m) {
     m = { id: Date.now(), title: c.name, content: '', company: c.name, isCompanyMemo: true, updatedAt: Date.now() };
     memos.unshift(m); saveMemos();
@@ -1075,7 +1092,7 @@ function openCompanyMemo(id) {
   stageSel.innerHTML = BOARD_STAGES.map(s => `<option value="${s}"${s===c.stage?' selected':''}>${s}</option>`).join('');
   // related events
   const now = new Date();
-  const evs = events.filter(e => e.company === c.name).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+  const evs = events.filter(e => sameCompany(e.company, c.name)).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
   const cmEvents = document.getElementById('cm-events');
   if (evs.length) {
     cmEvents.innerHTML = evs.map(e => {
@@ -1101,7 +1118,7 @@ function openCompanyMemo(id) {
 function getCmMemo() {
   const c = companies.find(c => c.id === cmCurrentCompanyId);
   if (!c) return null;
-  return memos.find(m => m.company === c.name);
+  return memos.find(m => sameCompany(m.company, c.name));
 }
 function cmSaveMemo() {
   const m = getCmMemo();
