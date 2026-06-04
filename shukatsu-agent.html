@@ -898,7 +898,8 @@ function renderEvents() {
     return ev.status !== 'done';
   }).sort((a,b) => new Date(a.datetime)-new Date(b.datetime));
   if (!filtered.length) { container.innerHTML=`<div class="empty-state"><div class="empty-icon">${currentFilter==='done'?'✅':'📭'}</div>${currentFilter==='done'?'完了した予定はありません':'予定がありません'}</div>`; return; }
-  container.innerHTML = filtered.map(ev => {
+
+  const renderCard = (ev) => {
     const validDate = !isNaN(new Date(ev.datetime).getTime());
     const diff = validDate ? (new Date(ev.datetime)-now)/86400000 : null;
     const isPast = validDate && diff < 0 && ev.status !== 'done';
@@ -915,7 +916,40 @@ function renderEvents() {
       <div class="ei-time">${formatDatetime(ev.datetime)}</div>
       ${ev.status!=='done'?countdown:'<div class="ei-countdown" style="color:var(--accent)">✓ 完了</div>'}
     </div>`;
-  }).join('');
+  };
+
+  // Done filter: no grouping
+  if (currentFilter === 'done') {
+    container.innerHTML = filtered.map(renderCard).join('');
+    return;
+  }
+
+  // Group by time period
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const endOfWeek = new Date(startOfToday.getTime() + 7*86400000);
+  const endOfThisMonth = new Date(now.getFullYear(), now.getMonth()+1, 1);
+  const endOfNextMonth = new Date(now.getFullYear(), now.getMonth()+2, 1);
+
+  const groups = { past:[], week:[], month:[], next:[], later:[], undated:[] };
+  filtered.forEach(ev => {
+    const d = new Date(ev.datetime);
+    if (isNaN(d.getTime())) { groups.undated.push(ev); return; }
+    if (d < startOfToday) groups.past.push(ev);
+    else if (d < endOfWeek) groups.week.push(ev);
+    else if (d < endOfThisMonth) groups.month.push(ev);
+    else if (d < endOfNextMonth) groups.next.push(ev);
+    else groups.later.push(ev);
+  });
+
+  const sectionTitle = (label) => `<div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:0.5px;margin:14px 4px 6px;text-transform:uppercase;">${label}</div>`;
+  let html = '';
+  if (groups.week.length)    html += sectionTitle('今週') + groups.week.map(renderCard).join('');
+  if (groups.month.length)   html += sectionTitle('今月') + groups.month.map(renderCard).join('');
+  if (groups.next.length)    html += sectionTitle('来月') + groups.next.map(renderCard).join('');
+  if (groups.later.length)   html += sectionTitle('それ以降') + groups.later.map(renderCard).join('');
+  if (groups.undated.length) html += sectionTitle('日時未定') + groups.undated.map(renderCard).join('');
+  if (groups.past.length)    html += sectionTitle('終了') + groups.past.map(renderCard).join('');
+  container.innerHTML = html;
 }
 function markDone(id) {
   const ev = events.find(e=>e.id===id);
