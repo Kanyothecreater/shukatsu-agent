@@ -455,8 +455,8 @@
       <textarea id="detail-detail" placeholder="面接の質問メモ、準備リスト、感想など..." style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:9px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;resize:vertical;min-height:120px;line-height:1.6;"></textarea>
     </div>
     <div style="display:flex;gap:8px;">
-      <button onclick="closeEventDetail()" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--font);font-size:14px;cursor:pointer;">キャンセル</button>
-      <button id="detail-done-btn" onclick="markDoneFromDetail()" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--amber);font-family:var(--font);font-size:14px;cursor:pointer;">✓ 完了にする</button>
+      <button onclick="deleteEventFromDetail()" style="padding:10px 14px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--red);font-family:var(--font);font-size:14px;cursor:pointer;">🗑 削除</button>
+      <button id="detail-done-btn" onclick="markDoneFromDetail()" style="padding:10px 16px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--amber);font-family:var(--font);font-size:14px;cursor:pointer;">✓ 完了</button>
       <button onclick="saveEventDetail()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--accent);color:#0d0f14;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;">保存</button>
     </div>
   </div>
@@ -823,49 +823,121 @@ function buildSystemPrompt() {
 1. JSONは必ず \`\`\`json と \`\`\` で囲むこと。生のJSONだけを返すことは絶対禁止。
 2. 形式:
 \`\`\`json
-{"company":"会社名","type":"面接|ES|説明会|筆記|その他","datetime":"YYYY-MM-DDTHH:mm:ss","note":"メモ","reminders":[1440,60],"loginUrl":"マイページURL（あれば）","loginId":"ログインID（あれば）","loginNote":"パスワードのヒントなど（あれば）"}
+{"company":"会社名","type":"面接|ES|説明会|筆記|その他","datetime":"YYYY-MM-DDTHH:mm:ss","place":"場所（あれば）","summary":"メールの要点を2〜4行で箇条書き要約","reminders":[1440,60],"loginUrl":"マイページURL（あれば）","loginId":"ログインID（あれば）","loginNote":"パスワードのヒントなど（あれば）"}
 \`\`\`
-3. メールにマイページのURL・ID・ログイン情報があれば loginUrl / loginId / loginNote に含める。情報がない項目はJSONに含めないこと（"NONE"や"なし"と書かない）。
-4. 複数の予定があれば、それぞれを別のJSONブロックで返す。
-5. 日時が本文から特定できない場合は、JSONを作らずにユーザーに日時を質問すること。推測で適当な日時を入れない。
-6. 一覧を聞かれたら見やすく教える。
-7. 簡潔に返答する。`;
+3. メールが貼られた場合は、summaryに「何の連絡か・何をすべきか・持ち物や注意点」など要点を簡潔にまとめること。場所があればplaceに入れる。
+4. メールにマイページのURL・ID・ログイン情報があれば loginUrl / loginId / loginNote に含める。情報がない項目はJSONに含めないこと（"NONE"や"なし"と書かない）。
+5. 複数の予定があれば、それぞれを別のJSONブロックで返す。
+6. 日時が本文から特定できない場合は、JSONを作らずにユーザーに日時を質問すること。推測で適当な日時を入れない。
+7. 一覧を聞かれたら見やすく教える。
+8. 簡潔に返答する。`;
 }
 
 // ─── Event management ─────────────────────────────────────
 async function confirmEvent(ev) {
   ev.id = Date.now(); ev.status = 'pending'; ev.createdAt = new Date().toISOString();
+  // Email summary + place auto-saved into the event detail (no asking)
+  let detailParts = [];
+  if (ev.place) detailParts.push('📍 ' + ev.place);
+  if (ev.summary) detailParts.push(ev.summary);
+  if (detailParts.length) ev.detail = detailParts.join('\n');
+  // stash login info on the event temporarily (used if user picks 企業別)
   events.push(ev); saveEvents(); renderEvents();
-  addMessage('assistant', `✅ ${ev.company} の ${ev.type} を登録しました！\n${formatDatetime(ev.datetime)}`);
+  addMessage('assistant', `✅ ${ev.company} の ${ev.type} を登録しました！\n${formatDatetime(ev.datetime)}${ev.detail ? '\n\n📝 要点をイベント詳細に保存しました。' : ''}`);
 
-  // If login info was extracted, save it into the company memo + ensure a board card exists
-  if (ev.loginUrl || ev.loginId || ev.loginNote) {
-    let m = memos.find(m => sameCompany(m.company, ev.company));
-    if (!m) {
-      m = { id: Date.now()+1, title: ev.company, content: '', company: ev.company, isCompanyMemo: true, updatedAt: Date.now() };
-      memos.unshift(m);
-    }
-    m.isCompanyMemo = true;
-    if (ev.loginUrl) m.loginUrl = ev.loginUrl;
-    if (ev.loginId) m.loginId = ev.loginId;
-    if (ev.loginNote) m.loginNote = ev.loginNote;
-    saveMemos();
-    if (!companies.find(c => sameCompany(c.name, ev.company))) {
-      companies.push({ id: Date.now()+2, name: ev.company, stage: BOARD_STAGES[0] });
-      saveCompanies();
-    }
-    addMessage('assistant', `🔑 ${ev.company} のマイページ情報をメモに保存しました。`);
-  }
-
+  // Send to Google Calendar and remember its event id (for later deletion)
   if (settings.gcalToken) await addToGoogleCalendar(ev);
+
+  // Ask where to file this into memo
+  askMemoDestination(ev.id);
 }
+
+function askMemoDestination(eventId) {
+  const container = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  div.innerHTML = `<div class="avatar">AI</div><div class="bubble">
+    この予定をメモに保存しますか？
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+      <button class="ev-btn confirm" onclick="fileEventToMemo(${eventId},'company')">🏢 企業別メモに保存（マイページ情報つき）</button>
+      <button class="ev-btn confirm" onclick="fileEventToMemo(${eventId},'plain')">📝 普通のメモに保存</button>
+      <button class="ev-btn cancel" onclick="fileEventToMemo(${eventId},'none')">保存しない</button>
+    </div>
+  </div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function fileEventToMemo(eventId, dest) {
+  const ev = events.find(e => e.id === eventId);
+  if (!ev) return;
+  if (dest === 'none') { addMessage('assistant', 'メモには保存しませんでした。'); return; }
+
+  if (dest === 'company') {
+    const existing = companies.find(c => sameCompany(c.name, ev.company));
+    if (!existing) {
+      // company not in board yet -> ask first
+      const container = document.getElementById('messages');
+      const div = document.createElement('div');
+      div.className = 'msg assistant';
+      div.innerHTML = `<div class="avatar">AI</div><div class="bubble">
+        「${ev.company}」はまだ進捗ボードにありません。登録しますか？
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+          <button class="ev-btn confirm" onclick="registerCompanyThenMemo(${eventId})">📊 進捗ボードに登録して企業別メモに保存</button>
+          <button class="ev-btn cancel" onclick="fileEventToMemo(${eventId},'plain')">📝 普通のメモに保存</button>
+          <button class="ev-btn cancel" onclick="fileEventToMemo(${eventId},'none')">保存しない（予定だけ登録）</button>
+        </div>
+      </div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+      return;
+    }
+    saveToCompanyMemo(ev);
+  } else if (dest === 'plain') {
+    const m = { id: Date.now(), title: `${ev.company} ${ev.type}`, content: ev.summary || ev.detail || '', company: '', isCompanyMemo: false, updatedAt: Date.now() };
+    memos.unshift(m);
+    saveMemos();
+    addMessage('assistant', `📝 普通のメモに保存しました。`);
+  }
+}
+
+function registerCompanyThenMemo(eventId) {
+  const ev = events.find(e => e.id === eventId);
+  if (!ev) return;
+  if (!companies.find(c => sameCompany(c.name, ev.company))) {
+    companies.push({ id: Date.now()+2, name: ev.company, stage: BOARD_STAGES[0] });
+    saveCompanies();
+    addMessage('assistant', `📊 ${ev.company} を進捗ボードに登録しました。`);
+  }
+  saveToCompanyMemo(ev);
+}
+
+function saveToCompanyMemo(ev) {
+  let m = memos.find(m => sameCompany(m.company, ev.company));
+  if (!m) {
+    m = { id: Date.now(), title: ev.company, content: '', company: ev.company, isCompanyMemo: true, updatedAt: Date.now() };
+    memos.unshift(m);
+  }
+  m.isCompanyMemo = true;
+  if (ev.loginUrl) m.loginUrl = ev.loginUrl;
+  if (ev.loginId) m.loginId = ev.loginId;
+  if (ev.loginNote) m.loginNote = ev.loginNote;
+  if (ev.summary) m.content = (m.content ? m.content + '\n\n' : '') + `【${ev.type} ${formatDatetime(ev.datetime)}】\n${ev.summary}`;
+  saveMemos();
+  ev.linkedCompany = ev.company;
+  saveEvents();
+  addMessage('assistant', `🏢 ${ev.company} の企業別メモに保存しました。${ev.loginUrl||ev.loginId ? 'マイページ情報も保存済み。' : ''}`);
+}
+
 async function addToGoogleCalendar(ev) {
   const start = new Date(ev.datetime);
   if (isNaN(start.getTime())) { addMessage('assistant', '⚠️ 日時が未定のため、カレンダーには追加していません。'); return; }
   const end = new Date(start.getTime() + 60*60*1000);
+  const desc = [ev.place ? '場所: '+ev.place : '', ev.summary || ev.detail || ''].filter(Boolean).join('\n');
   const body = {
     summary: `【就活】${ev.company} ${ev.type}`,
-    description: ev.note || '',
+    description: desc,
+    location: ev.place || '',
     start: { dateTime: start.toISOString(), timeZone: 'Asia/Tokyo' },
     end: { dateTime: end.toISOString(), timeZone: 'Asia/Tokyo' },
     reminders: { useDefault: false, overrides: (ev.reminders||[60,1440]).map(m=>({method:'popup',minutes:m})) }
@@ -877,9 +949,23 @@ async function addToGoogleCalendar(ev) {
       body: JSON.stringify(body)
     });
     const data = await res.json();
-    if (data.id) addMessage('assistant', `📅 Google Calendar にも追加しました！`);
+    if (data.id) {
+      ev.gcalId = data.id;   // remember for deletion
+      saveEvents();
+      addMessage('assistant', `📅 Google Calendar にも追加しました！`);
+    }
     else addMessage('assistant', `⚠️ Calendar への追加に失敗: ${data.error?.message}`);
   } catch(e) { addMessage('assistant', `⚠️ Calendar API エラー: ${e.message}`); }
+}
+
+async function deleteFromGoogleCalendar(gcalId) {
+  if (!gcalId || !settings.gcalToken) return;
+  try {
+    await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${gcalId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${settings.gcalToken}` }
+    });
+  } catch(e) { console.error('Calendar delete failed:', e); }
 }
 function saveEvents() { localStorage.setItem('shukatsu_events', JSON.stringify(events)); cloudPush(); }
 function filterEvents(f, btn) {
@@ -990,6 +1076,17 @@ function markDoneFromDetail() {
   if (!ev) return;
   ev.status = 'done'; saveEvents(); renderEvents();
   document.getElementById('event-detail-modal').classList.remove('open');
+}
+async function deleteEventFromDetail() {
+  const id = parseInt(document.getElementById('event-detail-modal').dataset.id);
+  const ev = events.find(e=>e.id===id);
+  if (!ev) return;
+  if (!confirm(`「${ev.company} ${ev.type}」を削除しますか？\nGoogle Calendar からも削除されます。`)) return;
+  if (ev.gcalId) await deleteFromGoogleCalendar(ev.gcalId);
+  events = events.filter(e => e.id !== id);
+  saveEvents(); renderEvents();
+  document.getElementById('event-detail-modal').classList.remove('open');
+  addMessage('assistant', `🗑 ${ev.company} の ${ev.type} を削除しました。`);
 }
 
 // ─── Calendar ─────────────────────────────────────────────
