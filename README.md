@@ -62,10 +62,12 @@
 
 ### ステップ1: Groq API キーを取得 / 第1步：获取 Groq API key
 **日本語**: [console.groq.com/keys](https://console.groq.com/keys) にアクセスし、無料でキーを作成します。AI（言葉を予定に変換する頭脳）に必要です。
+
 **中文**: 访问 [console.groq.com/keys](https://console.groq.com/keys)，免费创建一个 key。这是 AI（把语言转成日程的大脑）必需的。
 
 ### ステップ2: 設定でキーを入力 / 第2步：在设定里输入 key
 **日本語**: 画面右上の ⚙️ 設定 を開き、Groq API キーを貼り付けて保存。
+
 **中文**: 打开右上角 ⚙️ 設定，粘贴 Groq API key 并保存。
 
 ### ステップ3: Google Calendar 連携（任意）/ 第3步：Google 日历联动（可选）
