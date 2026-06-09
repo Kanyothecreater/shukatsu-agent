@@ -740,11 +740,19 @@ function addMessage(role, text, eventData) {
 }
 function renderEventCard(ev) {
   const typeClass = `type-${ev.type || 'その他'}`;
+  const summaryHtml = ev.summary 
+    ? `<div class="ev-meta" style="white-space:pre-wrap;font-size:12px;color:var(--text2);">📋 ${ev.summary.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`
+    : '';
+  const dateRangeHtml = ev.datetimeEnd 
+    ? `<div class="ev-meta">📅 ${formatDatetime(ev.datetime)} ～ ${formatDatetime(ev.datetimeEnd)}</div>`
+    : `<div class="ev-meta">📅 ${formatDatetime(ev.datetime)}</div>`;
   return `<div class="event-card">
     <div><span class="ev-company">${ev.company}</span>
     <span class="type-badge ${typeClass}" style="margin-left:6px">${ev.type || 'その他'}</span></div>
-    <div class="ev-meta">📅 ${formatDatetime(ev.datetime)}</div>
+    ${dateRangeHtml}
+    ${ev.place ? `<div class="ev-meta">📍 ${ev.place}</div>` : ''}
     ${ev.note ? `<div class="ev-meta">📝 ${ev.note}</div>` : ''}
+    ${summaryHtml}
     ${ev.loginUrl ? `<div class="ev-meta">🔗 ${ev.loginUrl}</div>` : ''}
     ${ev.loginId ? `<div class="ev-meta">🆔 ${ev.loginId}</div>` : ''}
     <div class="ev-actions">
@@ -825,18 +833,37 @@ function extractEvents(text) {
   const results = [];
   const seen = new Set();
   const objRegex = /\{[^{}]*"company"[^{}]*\}/g;
-  let m;
   const isNone = v => !v || ['none','null','なし','n/a','-','未定','不明'].includes(String(v).trim().toLowerCase());
   while ((m = objRegex.exec(text)) !== null) {
     try {
       const obj = JSON.parse(m[0]);
+      // Handle datetime ranges: if datetime contains ~ or -, split into start and end
+      if (obj.datetime && (obj.datetime.includes('~') || (obj.datetime.includes('-') && obj.datetime.lastIndexOf('-') > 10))) {
+        const sep = obj.datetime.includes('~') ? '~' : '-';
+        const parts = obj.datetime.split(sep);
+        if (parts.length === 2) {
+          obj.datetime = parts[0].trim();
+          obj.datetimeEnd = parts[1].trim();
+        }
+      }
+      // Clean up summary: if array, join with \n; if string, keep as is
+      if (Array.isArray(obj.summary)) {
+        obj.summary = obj.summary.join('\n');
+      } else if (typeof obj.summary !== 'string') {
+        delete obj.summary;
+      }
       // require a valid, parseable date
       if (obj.company && obj.datetime && !isNaN(new Date(obj.datetime).getTime())) {
+        // validate datetimeEnd if present
+        if (obj.datetimeEnd && isNaN(new Date(obj.datetimeEnd).getTime())) {
+          delete obj.datetimeEnd;
+        }
         // clean up "NONE"/placeholder login fields
         if (isNone(obj.loginUrl)) delete obj.loginUrl;
         if (isNone(obj.loginId)) delete obj.loginId;
         if (isNone(obj.loginNote)) delete obj.loginNote;
         if (isNone(obj.note)) delete obj.note;
+        if (isNone(obj.place)) delete obj.place;
         const key = obj.company + obj.datetime;
         if (!seen.has(key)) { seen.add(key); results.push(obj); }
       }
@@ -856,12 +883,22 @@ function buildSystemPrompt() {
 1. JSONは必ず \`\`\`json と \`\`\` で囲むこと。生のJSONだけを返すことは絶対禁止。
 2. 形式:
 \`\`\`json
-{"company":"会社名","type":"面接|ES|説明会|筆記|その他","datetime":"YYYY-MM-DDTHH:mm:ss","place":"場所（あれば）","summary":"メールの要点を2〜4行で箇条書き要約","reminders":[1440,60],"loginUrl":"マイページURL（あれば）","loginId":"ログインID（あれば）","loginNote":"パスワードのヒントなど（あれば）"}
+{"company":"会社名","type":"面接|ES|説明会|筆記|その他","datetime":"YYYY-MM-DDTHH:mm:ss（開始）","datetimeEnd":"YYYY-MM-DDTHH:mm:ss（終了、あれば）","place":"場所（あれば）","summary":"メールの要点...","reminders":[1440,60],"loginUrl":"...","loginId":"...","loginNote":"..."}
 \`\`\`
-3. メールが貼られた場合は、summaryに要点をできるだけ漏れなくまとめること。含めるべき項目: 選考の種類・内容、日時、場所/形式（オンライン/対面）、持ち物・準備、提出物や締切、所要時間、服装、連絡先、注意事項、マイページ/ログイン関連の案内など。箇条書きで、重要な情報を省略しない。場所があればplaceにも入れる。
-4. メールにマイページのURL・ID・ログイン情報があれば loginUrl / loginId / loginNote に含める。情報がない項目はJSONに含めないこと（"NONE"や"なし"と書かない）。
-5. 複数の予定があれば、それぞれを別のJSONブロックで返す。
-6. 日時が本文から特定できない場合は、JSONを作らずにユーザーに日時を質問すること。推測で適当な日時を入れない。
+3. datetimeとdatetimeEndの形式:
+   - 単一の予定: datetimeだけ（例：面接が「6/10 15:00」）
+   - 期間がある予定: datetimeとdatetimeEndの両方（例：WebTest「6/10 00:00～6/17 23:59」、ES締切「6/15まで」=「2026-06-15T23:59:00」）
+   - datetimeEndがある場合は開始と終了を同時に抽出すること。単一の時刻に直すな。
+5. 期間類の予定の認識例（重要）:
+   - WebTest「受験期間 6/10(水)～6/17(水)23:59」→ datetime: 2026-06-10T00:00:00, datetimeEnd: 2026-06-17T23:59:00
+   - ES締切「提出締切 6/20 23:59」→ datetime: 2026-06-20T23:59:00（単一、締切は開始と同じ）
+   - GD「第2次GD選考 6/15～6/16開催」→ datetime: 2026-06-15T09:00:00, datetimeEnd: 2026-06-16T17:00:00
+   - 明確な時刻がない期間は「～00:00」「～23:59」を推測でいい。だが日付は絶対に間違えない。
+6. summaryは必ず文字列で、配列（[]）は厳禁。複数の箇条書きがある場合は\\nで連結して1つの文字列にする。
+5. メールが貼られた場合は、summaryに要点をできるだけ漏れなくまとめること。含めるべき項目: 選考の種類・内容、日時、場所/形式（オンライン/対面）、持ち物・準備、提出物や締切、所要時間、服装、連絡先、注意事項、マイページ/ログイン関連の案内など。箇条書きで、重要な情報を省略しない。場所があればplaceにも入れる。
+6. メールにマイページのURL・ID・ログイン情報があれば loginUrl / loginId / loginNote に含める。情報がない項目はJSONに含めないこと（"NONE"や"なし"と書かない）。
+7. 複数の予定があれば、それぞれを別のJSONブロックで返す。
+8. 日時が本文から特定できない場合は、JSONを作らずにユーザーに日時を質問すること。推測で適当な日時を入れない。
 7. 一覧を聞かれたら見やすく教える。
 8. 簡潔に返答する。
 9. 会社名は日本の就活で一般的な表記に統一する（英語名でもカタカナが一般的なら例: Accenture→アクセンチュア、Sony→ソニー）。`;
@@ -966,7 +1003,10 @@ function saveToCompanyMemo(ev) {
 async function addToGoogleCalendar(ev) {
   const start = new Date(ev.datetime);
   if (isNaN(start.getTime())) { addMessage('assistant', '⚠️ 日時が未定のため、カレンダーには追加していません。'); return; }
-  const end = new Date(start.getTime() + 60*60*1000);
+  // If datetimeEnd exists, use it; otherwise default to +1 hour
+  const end = ev.datetimeEnd 
+    ? new Date(ev.datetimeEnd) 
+    : new Date(start.getTime() + 60*60*1000);
   const desc = [ev.place ? '場所: '+ev.place : '', ev.summary || ev.detail || ''].filter(Boolean).join('\n');
   const body = {
     summary: `【就活】${ev.company} ${ev.type}`,
@@ -984,9 +1024,10 @@ async function addToGoogleCalendar(ev) {
     });
     const data = await res.json();
     if (data.id) {
-      ev.gcalId = data.id;   // remember for deletion
+      ev.gcalId = data.id;
       saveEvents();
-      addMessage('assistant', `📅 Google Calendar にも追加しました！`);
+      const rangeMsg = ev.datetimeEnd ? `📅 Google Calendar に期間イベントとして追加しました！` : `📅 Google Calendar にも追加しました！`;
+      addMessage('assistant', rangeMsg);
     }
     else addMessage('assistant', `⚠️ Calendar への追加に失敗: ${data.error?.message}`);
   } catch(e) { addMessage('assistant', `⚠️ Calendar API エラー: ${e.message}`); }
@@ -1156,7 +1197,9 @@ function openEventDetail(id) {
   document.getElementById('detail-company').textContent = ev.company;
   document.getElementById('detail-type').textContent = ev.type || 'その他';
   document.getElementById('detail-type').className = `type-badge type-${ev.type||'その他'}`;
-  document.getElementById('detail-time').textContent = formatDatetime(ev.datetime);
+  document.getElementById('detail-time').textContent = ev.datetimeEnd
+    ? `${formatDatetime(ev.datetime)} ～ ${formatDatetime(ev.datetimeEnd)}`
+    : formatDatetime(ev.datetime);
   document.getElementById('detail-note').value = ev.note || '';
   document.getElementById('detail-detail').value = ev.detail || '';
   document.getElementById('detail-status').textContent = ev.status === 'done' ? '✓ 完了' : '進行中';
@@ -1255,7 +1298,14 @@ function renderCalendar() {
   for (let i=firstDay-1;i>=0;i--) html+=`<div class="cal-day other-month"><div class="cal-day-num">${daysInPrev-i}</div></div>`;
   for (let d=1;d<=daysInMonth;d++) {
     const isToday = today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
-    const dayEvs = events.filter(ev=>{const dt=new Date(ev.datetime);return dt.getFullYear()===calYear&&dt.getMonth()===calMonth&&dt.getDate()===d&&ev.status!=='done';});
+    const dayEvs = events.filter(ev=>{
+      if (ev.status === 'done') return false;
+      const dtStart = new Date(ev.datetime);
+      const dtEnd = ev.datetimeEnd ? new Date(ev.datetimeEnd) : dtStart;
+      const dayDate = new Date(calYear, calMonth, d);
+      // check if this day is within the event's date range
+      return dayDate >= dtStart && dayDate <= dtEnd;
+    });
     const dots = dayEvs.slice(0,3).map(ev=>`<div class="cal-dot type-${ev.type||'その他'}" onclick="openEventDetail(${ev.id})" style="cursor:pointer">${ev.company}</div>`).join('');
     html+=`<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${d}</div>${dots}</div>`;
   }
@@ -1799,3 +1849,4 @@ if (settings.syncKey) cloudPull(false);
 </script>
 </body>
 </html>
+
