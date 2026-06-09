@@ -462,7 +462,21 @@
       <span id="detail-type" class="type-badge"></span>
       <span id="detail-status" style="margin-left:auto;font-size:12px;"></span>
     </div>
-    <div style="font-size:13px;color:var(--text2);font-family:var(--mono);margin-bottom:20px;">📅 <span id="detail-time"></span></div>
+    <div style="font-size:13px;color:var(--text2);font-family:var(--mono);margin-bottom:12px;">📅 <span id="detail-time"></span></div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:20px;">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">⏰ 日時を編集（期間予定は終了も入力）</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div style="flex:1;min-width:140px;">
+          <label style="display:block;font-size:10px;color:var(--text3);margin-bottom:3px;">開始</label>
+          <input type="datetime-local" id="detail-start" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:6px 8px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;color-scheme:dark;">
+        </div>
+        <div style="flex:1;min-width:140px;">
+          <label style="display:block;font-size:10px;color:var(--text3);margin-bottom:3px;">終了（任意）</label>
+          <input type="datetime-local" id="detail-end" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:6px 8px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;color-scheme:dark;">
+        </div>
+      </div>
+      <button onclick="clearDetailEnd()" style="margin-top:8px;background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;">終了をクリア（単発予定にする）</button>
+    </div>
     <div style="margin-bottom:16px;">
       <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;letter-spacing:0.3px;">一言メモ</label>
       <input type="text" id="detail-note" placeholder="簡単なメモ..." style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:9px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;"/>
@@ -1266,6 +1280,16 @@ function openEventDetail(id) {
   document.getElementById('detail-time').textContent = ev.datetimeEnd
     ? `${formatDatetime(ev.datetime)} ～ ${formatDatetime(ev.datetimeEnd)}`
     : formatDatetime(ev.datetime);
+  // populate editable datetime inputs (format: YYYY-MM-DDTHH:mm)
+  const toLocalInput = (iso) => {
+    if (!iso) return '';
+    const dt = new Date(iso);
+    if (isNaN(dt.getTime())) return '';
+    const pad = n => String(n).padStart(2,'0');
+    return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+  };
+  document.getElementById('detail-start').value = toLocalInput(ev.datetime);
+  document.getElementById('detail-end').value = toLocalInput(ev.datetimeEnd);
   document.getElementById('detail-note').value = ev.note || '';
   document.getElementById('detail-detail').value = ev.detail || '';
   document.getElementById('detail-status').textContent = ev.status === 'done' ? '✓ 完了' : '進行中';
@@ -1306,14 +1330,34 @@ function openCompanyMemoFromEvent() {
   showView('memo', document.querySelectorAll('header nav button')[3]);
   openMemo(memoId);
 }
-function saveEventDetail() {
+async function saveEventDetail() {
   const id = parseInt(document.getElementById('event-detail-modal').dataset.id);
   const ev = events.find(e=>e.id===id);
   if (!ev) return;
   ev.note = document.getElementById('detail-note').value;
   ev.detail = document.getElementById('detail-detail').value;
+  // read edited datetimes (input format YYYY-MM-DDTHH:mm -> add :00 seconds)
+  const startVal = document.getElementById('detail-start').value;
+  const endVal = document.getElementById('detail-end').value;
+  const oldDatetime = ev.datetime, oldEnd = ev.datetimeEnd;
+  if (startVal) ev.datetime = startVal.length === 16 ? startVal + ':00' : startVal;
+  if (endVal) {
+    ev.datetimeEnd = endVal.length === 16 ? endVal + ':00' : endVal;
+  } else {
+    delete ev.datetimeEnd;
+  }
+  // if datetime changed and event was on Google Calendar, re-sync
+  const changed = oldDatetime !== ev.datetime || oldEnd !== ev.datetimeEnd;
+  if (changed && (ev.gcalId || Array.isArray(ev.gcalIds)) && settings.gcalToken) {
+    if (ev.gcalId) { await deleteFromGoogleCalendar(ev.gcalId); delete ev.gcalId; }
+    if (Array.isArray(ev.gcalIds)) { for (const gid of ev.gcalIds) await deleteFromGoogleCalendar(gid); delete ev.gcalIds; }
+    await addToGoogleCalendar(ev);
+  }
   saveEvents(); renderEvents();
   document.getElementById('event-detail-modal').classList.remove('open');
+}
+function clearDetailEnd() {
+  document.getElementById('detail-end').value = '';
 }
 function closeEventDetail() {
   document.getElementById('event-detail-modal').classList.remove('open');
@@ -1935,4 +1979,3 @@ if (settings.syncKey) cloudPull(false);
 </script>
 </body>
 </html>
-
