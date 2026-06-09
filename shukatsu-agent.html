@@ -182,22 +182,12 @@
   .cal-day.today { border-color: var(--accent); }
   .cal-day-num { font-size: 12px; font-weight: 500; margin-bottom: 4px; color: var(--text2); }
   .cal-day.today .cal-day-num { color: var(--accent); }
-  .cal-dot { font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(110,231,183,0.15); color: var(--accent); }
+  .cal-dot { font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; background: rgba(139,144,158,0.15); color: var(--text2); }
   .cal-dot.type-面接 { background: rgba(167,139,250,0.2); color: var(--purple); }
   .cal-dot.type-ES { background: rgba(96,165,250,0.2); color: var(--blue); }
   .cal-dot.type-説明会 { background: rgba(110,231,183,0.15); color: var(--accent); }
   .cal-dot.type-筆記 { background: rgba(251,191,36,0.15); color: var(--amber); }
   .cal-dot.type-その他 { background: rgba(139,144,158,0.15); color: var(--text2); }
-  /* Multi-day range bars */
-  .cal-range { font-size: 10px; font-weight: 600; padding: 0 5px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; height: 16px; line-height: 16px; box-sizing: border-box; background: var(--accent); color: #0d0f14; }
-  .cal-range.r-start { border-radius: 8px 0 0 8px; margin-right: -7px; }
-  .cal-range.r-mid { border-radius: 0; margin-left: -7px; margin-right: -7px; color: transparent; }
-  .cal-range.r-end { border-radius: 0 8px 8px 0; margin-left: -7px; color: transparent; }
-  .cal-range.type-面接 { background: var(--purple); color: #0d0f14; }
-  .cal-range.type-ES { background: var(--blue); color: #0d0f14; }
-  .cal-range.type-説明会 { background: var(--accent); color: #0d0f14; }
-  .cal-range.type-筆記 { background: var(--amber); color: #0d0f14; }
-  .cal-range.type-その他 { background: var(--text2); color: #fff; }
 
   /* ── Memo view ── */
   #memo-view { flex-direction: row; }
@@ -1412,31 +1402,17 @@ function renderCalendar() {
   for (let i=firstDay-1;i>=0;i--) html+=`<div class="cal-day other-month"><div class="cal-day-num">${daysInPrev-i}</div></div>`;
   for (let d=1;d<=daysInMonth;d++) {
     const isToday = today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
-    const dayStart = new Date(calYear, calMonth, d, 0, 0, 0);
-    const dayEnd = new Date(calYear, calMonth, d, 23, 59, 59);
     const items = [];
     events.forEach(ev=>{
       if (ev.status === 'done') return;
       const s = new Date(ev.datetime);
       if (isNaN(s.getTime())) return;
       const hasEnd = ev.datetimeEnd && !isNaN(new Date(ev.datetimeEnd).getTime());
-      const e = hasEnd ? new Date(ev.datetimeEnd) : s;
-      // does this event overlap this calendar day?
-      if (!(s <= dayEnd && e >= dayStart)) return;
-      // single-day (or no end) event -> dot
-      const sameDay = s.getFullYear()===e.getFullYear()&&s.getMonth()===e.getMonth()&&s.getDate()===e.getDate();
-      if (!hasEnd || sameDay) {
-        items.push(`<div class="cal-dot type-${ev.type||'その他'}" onclick="openEventDetail(${ev.id})" style="cursor:pointer">${ev.company}</div>`);
-        return;
-      }
-      // multi-day event -> range bar; figure out role for this day
-      const isStartDay = s.getFullYear()===calYear&&s.getMonth()===calMonth&&s.getDate()===d;
-      const isEndDay = e.getFullYear()===calYear&&e.getMonth()===calMonth&&e.getDate()===d;
-      let role = 'r-mid';
-      if (isStartDay) role = 'r-start';
-      else if (isEndDay) role = 'r-end';
-      const label = isStartDay ? `${ev.company}` : '·';
-      items.push(`<div class="cal-range type-${ev.type||'その他'} ${role}" onclick="openEventDetail(${ev.id})">${label}</div>`);
+      // For period events, show only on the deadline (end) date. For single events, on their date.
+      const showDate = hasEnd ? new Date(ev.datetimeEnd) : s;
+      if (!(showDate.getFullYear()===calYear && showDate.getMonth()===calMonth && showDate.getDate()===d)) return;
+      const label = hasEnd ? `${ev.company}〆` : ev.company;
+      items.push(`<div class="cal-dot type-${ev.type||'その他'}" onclick="openEventDetail(${ev.id})">${label}</div>`);
     });
     html+=`<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${d}</div>${items.slice(0,4).join('')}</div>`;
   }
