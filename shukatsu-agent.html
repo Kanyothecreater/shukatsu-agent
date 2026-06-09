@@ -189,15 +189,15 @@
   .cal-dot.type-筆記 { background: rgba(251,191,36,0.15); color: var(--amber); }
   .cal-dot.type-その他 { background: rgba(139,144,158,0.15); color: var(--text2); }
   /* Multi-day range bars */
-  .cal-range { font-size: 10px; padding: 2px 5px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; height: 16px; box-sizing: border-box; }
-  .cal-range.r-start { border-radius: 3px 0 0 3px; margin-right: -7px; }
+  .cal-range { font-size: 10px; font-weight: 600; padding: 0 5px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; height: 16px; line-height: 16px; box-sizing: border-box; }
+  .cal-range.r-start { border-radius: 8px 0 0 8px; margin-right: -7px; }
   .cal-range.r-mid { border-radius: 0; margin-left: -7px; margin-right: -7px; color: transparent; }
-  .cal-range.r-end { border-radius: 0 3px 3px 0; margin-left: -7px; color: transparent; }
-  .cal-range.type-面接 { background: rgba(167,139,250,0.35); color: var(--purple); }
-  .cal-range.type-ES { background: rgba(96,165,250,0.35); color: var(--blue); }
-  .cal-range.type-説明会 { background: rgba(110,231,183,0.3); color: var(--accent); }
-  .cal-range.type-筆記 { background: rgba(251,191,36,0.3); color: var(--amber); }
-  .cal-range.type-その他 { background: rgba(139,144,158,0.3); color: var(--text2); }
+  .cal-range.r-end { border-radius: 0 8px 8px 0; margin-left: -7px; color: transparent; }
+  .cal-range.type-面接 { background: var(--purple); color: #0d0f14; }
+  .cal-range.type-ES { background: var(--blue); color: #0d0f14; }
+  .cal-range.type-説明会 { background: var(--accent); color: #0d0f14; }
+  .cal-range.type-筆記 { background: var(--amber); color: #0d0f14; }
+  .cal-range.type-その他 { background: var(--text2); color: #fff; }
 
   /* ── Memo view ── */
   #memo-view { flex-direction: row; }
