@@ -188,6 +188,16 @@
   .cal-dot.type-説明会 { background: rgba(110,231,183,0.15); color: var(--accent); }
   .cal-dot.type-筆記 { background: rgba(251,191,36,0.15); color: var(--amber); }
   .cal-dot.type-その他 { background: rgba(139,144,158,0.15); color: var(--text2); }
+  /* Multi-day range bars */
+  .cal-range { font-size: 10px; padding: 2px 5px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; height: 16px; box-sizing: border-box; }
+  .cal-range.r-start { border-radius: 3px 0 0 3px; margin-right: -7px; }
+  .cal-range.r-mid { border-radius: 0; margin-left: -7px; margin-right: -7px; color: transparent; }
+  .cal-range.r-end { border-radius: 0 3px 3px 0; margin-left: -7px; color: transparent; }
+  .cal-range.type-面接 { background: rgba(167,139,250,0.35); color: var(--purple); }
+  .cal-range.type-ES { background: rgba(96,165,250,0.35); color: var(--blue); }
+  .cal-range.type-説明会 { background: rgba(110,231,183,0.3); color: var(--accent); }
+  .cal-range.type-筆記 { background: rgba(251,191,36,0.3); color: var(--amber); }
+  .cal-range.type-その他 { background: rgba(139,144,158,0.3); color: var(--text2); }
 
   /* ── Memo view ── */
   #memo-view { flex-direction: row; }
@@ -837,13 +847,19 @@ function extractEvents(text) {
   while ((m = objRegex.exec(text)) !== null) {
     try {
       const obj = JSON.parse(m[0]);
-      // Handle datetime ranges: if datetime contains ~ or -, split into start and end
-      if (obj.datetime && (obj.datetime.includes('~') || (obj.datetime.includes('-') && obj.datetime.lastIndexOf('-') > 10))) {
-        const sep = obj.datetime.includes('~') ? '~' : '-';
-        const parts = obj.datetime.split(sep);
+      // Handle datetime ranges: detect any tilde variant (全角～ 半角~ 〜) with optional spaces
+      if (obj.datetime && /[~～〜]/.test(obj.datetime)) {
+        const parts = obj.datetime.split(/\s*[~～〜]\s*/);
         if (parts.length === 2) {
           obj.datetime = parts[0].trim();
           obj.datetimeEnd = parts[1].trim();
+        }
+      } else if (obj.datetime && obj.datetime.includes('-') && obj.datetime.lastIndexOf('-') > 10) {
+        // range like "2026-06-10T...-2026-06-17T..." → split into two ISO dates
+        const matches = obj.datetime.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/g);
+        if (matches && matches.length === 2) {
+          obj.datetime = matches[0];
+          obj.datetimeEnd = matches[1];
         }
       }
       // Clean up summary: if array, join with \n; if string, keep as is
@@ -1001,36 +1017,86 @@ function saveToCompanyMemo(ev) {
 }
 
 async function addToGoogleCalendar(ev) {
-  const start = new Date(ev.datetime);
-  if (isNaN(start.getTime())) { addMessage('assistant', '⚠️ 日時が未定のため、カレンダーには追加していません。'); return; }
-  // If datetimeEnd exists, use it; otherwise default to +1 hour
-  const end = ev.datetimeEnd 
-    ? new Date(ev.datetimeEnd) 
-    : new Date(start.getTime() + 60*60*1000);
-  const desc = [ev.place ? '場所: '+ev.place : '', ev.summary || ev.detail || ''].filter(Boolean).join('\n');
-  const body = {
-    summary: `【就活】${ev.company} ${ev.type}`,
-    description: desc,
-    location: ev.place || '',
-    start: { dateTime: start.toISOString(), timeZone: 'Asia/Tokyo' },
-    end: { dateTime: end.toISOString(), timeZone: 'Asia/Tokyo' },
-    reminders: { useDefault: false, overrides: (ev.reminders||[60,1440]).map(m=>({method:'popup',minutes:m})) }
-  };
-  try {
+  const startReal = new Date(ev.datetime);
+  if (isNaN(startReal.getTime())) { addMessage('assistant', '⚠️ 日時が未定のため、カレンダーには追加していません。'); return; }
+  const hasEnd = ev.datetimeEnd && !isNaN(new Date(ev.datetimeEnd).getTime());
+
+  const postEvent = async (body) => {
     const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${settings.gcalToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
     const data = await res.json();
-    if (data.id) {
-      ev.gcalId = data.id;
+    return data.id || null;
+  };
+
+  if (hasEnd) {
+    // Range event: create one daily reminder per day, each titled with the countdown to the deadline
+    const deadline = new Date(ev.datetimeEnd);
+    const dayMs = 86400000;
+    let cur = new Date(startReal); cur.setHours(0,0,0,0);
+    const dlMidnight = new Date(deadline); dlMidnight.setHours(0,0,0,0);
+    const totalDays = Math.round((dlMidnight - cur)/dayMs);
+    if (totalDays > 45) { addMessage('assistant', '⚠️ 期間が長すぎるため、毎日のリマインダーは作成しません（締切日のみ設定）。'); }
+    const gcalIds = [];
+    const desc = [
+      `📆 期間: ${formatDatetime(ev.datetime)} ～ ${formatDatetime(ev.datetimeEnd)}`,
+      ev.place ? '場所: '+ev.place : '',
+      ev.summary || ev.detail || ''
+    ].filter(Boolean).join('\n');
+    try {
+      if (totalDays > 45) {
+        // too long: just one reminder at the deadline
+        const s = new Date(deadline);
+        const e = new Date(s.getTime()+30*60*1000);
+        const id = await postEvent({
+          summary: `【就活】${ev.company} ${ev.type}（本日締切）`,
+          description: desc, location: ev.place || '',
+          start: { dateTime: s.toISOString(), timeZone: 'Asia/Tokyo' },
+          end: { dateTime: e.toISOString(), timeZone: 'Asia/Tokyo' },
+          reminders: { useDefault: false, overrides: [{method:'popup',minutes:60},{method:'popup',minutes:1440}] }
+        });
+        if (id) gcalIds.push(id);
+      } else {
+        // one event per day with countdown title; fire at the deadline's time of day
+        for (let day = new Date(cur); day <= dlMidnight; day = new Date(day.getTime()+dayMs)) {
+          const daysLeft = Math.round((dlMidnight - day)/dayMs);
+          const title = daysLeft === 0
+            ? `【就活】${ev.company} ${ev.type} 🔴 本日締切！`
+            : `【就活】${ev.company} ${ev.type} ⏳ 締切まであと${daysLeft}日`;
+          const s = new Date(day);
+          s.setHours(deadline.getHours(), deadline.getMinutes(), 0, 0);
+          const e = new Date(s.getTime()+30*60*1000);
+          const id = await postEvent({
+            summary: title, description: desc, location: ev.place || '',
+            start: { dateTime: s.toISOString(), timeZone: 'Asia/Tokyo' },
+            end: { dateTime: e.toISOString(), timeZone: 'Asia/Tokyo' },
+            reminders: { useDefault: false, overrides: [{method:'popup',minutes:0}] }
+          });
+          if (id) gcalIds.push(id);
+        }
+      }
+      ev.gcalIds = gcalIds;
       saveEvents();
-      const rangeMsg = ev.datetimeEnd ? `📅 Google Calendar に期間イベントとして追加しました！` : `📅 Google Calendar にも追加しました！`;
-      addMessage('assistant', rangeMsg);
-    }
-    else addMessage('assistant', `⚠️ Calendar への追加に失敗: ${data.error?.message}`);
-  } catch(e) { addMessage('assistant', `⚠️ Calendar API エラー: ${e.message}`); }
+      addMessage('assistant', `📅 Google Calendar に毎日のカウントダウンリマインダーを設定しました！（${gcalIds.length}日分、締切: ${formatDatetime(ev.datetimeEnd)}）`);
+    } catch(e) { addMessage('assistant', `⚠️ Calendar API エラー: ${e.message}`); }
+  } else {
+    // Single event: normal 1-hour block
+    const end = new Date(startReal.getTime() + 60*60*1000);
+    const desc = [ev.place ? '場所: '+ev.place : '', ev.summary || ev.detail || ''].filter(Boolean).join('\n');
+    try {
+      const id = await postEvent({
+        summary: `【就活】${ev.company} ${ev.type}`,
+        description: desc, location: ev.place || '',
+        start: { dateTime: startReal.toISOString(), timeZone: 'Asia/Tokyo' },
+        end: { dateTime: end.toISOString(), timeZone: 'Asia/Tokyo' },
+        reminders: { useDefault: false, overrides: (ev.reminders||[60,1440]).map(m=>({method:'popup',minutes:m})) }
+      });
+      if (id) { ev.gcalId = id; saveEvents(); addMessage('assistant', `📅 Google Calendar にも追加しました！`); }
+      else addMessage('assistant', `⚠️ Calendar への追加に失敗しました。`);
+    } catch(e) { addMessage('assistant', `⚠️ Calendar API エラー: ${e.message}`); }
+  }
 }
 
 async function deleteFromGoogleCalendar(gcalId) {
@@ -1267,10 +1333,13 @@ async function deleteEventFromDetail() {
   if (!ev) return;
   if (!confirm(`「${ev.company} ${ev.type}」を削除しますか？\nGoogle Calendar からも削除されます。`)) return;
   const deletedEvent = { ...ev };
+  // delete single gcal event, or all daily countdown events
   if (ev.gcalId) await deleteFromGoogleCalendar(ev.gcalId);
+  if (Array.isArray(ev.gcalIds)) { for (const gid of ev.gcalIds) await deleteFromGoogleCalendar(gid); }
   events = events.filter(e => e.id !== id);
   saveEvents(); renderEvents();
   delete deletedEvent.gcalId;
+  delete deletedEvent.gcalIds;
   addToTrash('event', deletedEvent);
   document.getElementById('event-detail-modal').classList.remove('open');
   showUndo(`「${deletedEvent.company} ${deletedEvent.type}」を削除しました`, () => {
@@ -1298,16 +1367,33 @@ function renderCalendar() {
   for (let i=firstDay-1;i>=0;i--) html+=`<div class="cal-day other-month"><div class="cal-day-num">${daysInPrev-i}</div></div>`;
   for (let d=1;d<=daysInMonth;d++) {
     const isToday = today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
-    const dayEvs = events.filter(ev=>{
-      if (ev.status === 'done') return false;
-      const dtStart = new Date(ev.datetime);
-      const dtEnd = ev.datetimeEnd ? new Date(ev.datetimeEnd) : dtStart;
-      const dayDate = new Date(calYear, calMonth, d);
-      // check if this day is within the event's date range
-      return dayDate >= dtStart && dayDate <= dtEnd;
+    const dayStart = new Date(calYear, calMonth, d, 0, 0, 0);
+    const dayEnd = new Date(calYear, calMonth, d, 23, 59, 59);
+    const items = [];
+    events.forEach(ev=>{
+      if (ev.status === 'done') return;
+      const s = new Date(ev.datetime);
+      if (isNaN(s.getTime())) return;
+      const hasEnd = ev.datetimeEnd && !isNaN(new Date(ev.datetimeEnd).getTime());
+      const e = hasEnd ? new Date(ev.datetimeEnd) : s;
+      // does this event overlap this calendar day?
+      if (!(s <= dayEnd && e >= dayStart)) return;
+      // single-day (or no end) event -> dot
+      const sameDay = s.getFullYear()===e.getFullYear()&&s.getMonth()===e.getMonth()&&s.getDate()===e.getDate();
+      if (!hasEnd || sameDay) {
+        items.push(`<div class="cal-dot type-${ev.type||'その他'}" onclick="openEventDetail(${ev.id})" style="cursor:pointer">${ev.company}</div>`);
+        return;
+      }
+      // multi-day event -> range bar; figure out role for this day
+      const isStartDay = s.getFullYear()===calYear&&s.getMonth()===calMonth&&s.getDate()===d;
+      const isEndDay = e.getFullYear()===calYear&&e.getMonth()===calMonth&&e.getDate()===d;
+      let role = 'r-mid';
+      if (isStartDay) role = 'r-start';
+      else if (isEndDay) role = 'r-end';
+      const label = isStartDay ? `${ev.company}` : '·';
+      items.push(`<div class="cal-range type-${ev.type||'その他'} ${role}" onclick="openEventDetail(${ev.id})">${label}</div>`);
     });
-    const dots = dayEvs.slice(0,3).map(ev=>`<div class="cal-dot type-${ev.type||'その他'}" onclick="openEventDetail(${ev.id})" style="cursor:pointer">${ev.company}</div>`).join('');
-    html+=`<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${d}</div>${dots}</div>`;
+    html+=`<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${d}</div>${items.slice(0,4).join('')}</div>`;
   }
   const remaining = 42-firstDay-daysInMonth;
   for (let i=1;i<=remaining;i++) html+=`<div class="cal-day other-month"><div class="cal-day-num">${i}</div></div>`;
