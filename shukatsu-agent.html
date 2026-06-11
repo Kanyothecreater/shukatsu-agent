@@ -824,14 +824,18 @@ async function sendMessage() {
     messages.push({ role: 'assistant', content: reply });
 
     const foundEvents = extractEvents(reply);
+    const foundMypages = extractMypages(reply);
     let visibleText = reply.replace(/```json[\s\S]*?```/g, '').trim();
     visibleText = visibleText.replace(/\{[\s\S]*?"company"[\s\S]*?\}/g, '').trim();
 
-    if (foundEvents.length > 0) {
-      addMessage('assistant', visibleText || '以下の予定を登録しますか？');
+    if (foundEvents.length > 0 || foundMypages.length > 0) {
+      addMessage('assistant', visibleText || '以下を確認してください:');
       const lb = document.querySelector('#messages .msg.assistant:last-child .bubble');
       foundEvents.forEach(e => {
         if (lb) { const d = document.createElement('div'); d.innerHTML = renderEventCard(e); lb.appendChild(d.firstChild); }
+      });
+      foundMypages.forEach(mp => {
+        if (lb) { const d = document.createElement('div'); d.innerHTML = renderMypageCard(mp); lb.appendChild(d.firstChild); }
       });
     } else {
       addMessage('assistant', reply);
@@ -893,6 +897,63 @@ function extractEvents(text) {
   return results;
 }
 
+// Extract マイページ案内 (login-info-only, no schedule)
+function extractMypages(text) {
+  const results = [];
+  const seen = new Set();
+  const objRegex = /\{[^{}]*"company"[^{}]*\}/g;
+  const isNone = v => !v || ['none','null','なし','n/a','-','未定','不明'].includes(String(v).trim().toLowerCase());
+  let mm;
+  while ((mm = objRegex.exec(text)) !== null) {
+    try {
+      const obj = JSON.parse(mm[0]);
+      // only mypage:true objects without a usable datetime
+      if (obj.company && obj.mypage === true) {
+        if (isNone(obj.loginUrl)) delete obj.loginUrl;
+        if (isNone(obj.loginId)) delete obj.loginId;
+        if (isNone(obj.loginNote)) delete obj.loginNote;
+        if (!seen.has(obj.company)) { seen.add(obj.company); results.push(obj); }
+      }
+    } catch {}
+  }
+  return results;
+}
+
+function renderMypageCard(mp) {
+  return `<div class="event-card" style="border-left:3px solid var(--blue)">
+    <div><span class="ev-company">${mp.company}</span>
+    <span class="type-badge" style="margin-left:6px;background:rgba(96,165,250,0.2);color:var(--blue)">🔑 マイページ</span></div>
+    ${mp.loginUrl ? `<div class="ev-meta">🔗 ${mp.loginUrl}</div>` : ''}
+    ${mp.loginId ? `<div class="ev-meta">🆔 ${mp.loginId}</div>` : ''}
+    ${mp.loginNote ? `<div class="ev-meta">📝 ${mp.loginNote}</div>` : ''}
+    <div class="ev-actions">
+      <button class="ev-btn confirm" onclick='confirmMypage(${JSON.stringify(mp).replace(/'/g,"&#39;")})'>✓ 進捗表に追加</button>
+      <button class="ev-btn cancel" onclick="this.closest('.event-card').remove()">✕ キャンセル</button>
+    </div>
+  </div>`;
+}
+
+function confirmMypage(mp) {
+  // create/update the company memo with login info
+  let m = memos.find(x => sameCompany(x.company, mp.company));
+  if (!m) {
+    m = { id: Date.now(), title: mp.company, content: '', company: mp.company, isCompanyMemo: true, updatedAt: Date.now() };
+    memos.unshift(m);
+  }
+  m.isCompanyMemo = true;
+  if (mp.loginUrl) m.loginUrl = mp.loginUrl;
+  if (mp.loginId) m.loginId = mp.loginId;
+  if (mp.loginNote) m.loginNote = mp.loginNote;
+  m.updatedAt = Date.now();
+  saveMemos();
+  // add to board's first stage if not already there
+  if (!companies.find(c => sameCompany(c.name, mp.company))) {
+    companies.push({ id: Date.now()+1, name: mp.company, stage: BOARD_STAGES[0] });
+    saveCompanies();
+  }
+  addMessage('assistant', `🔑 ${mp.company} のマイページ情報を保存し、進捗表の「${BOARD_STAGES[0]}」に追加しました！`);
+}
+
 function buildSystemPrompt() {
   const evList = events.map(e => `[${e.id}] ${e.company} / ${e.type} / ${formatDatetime(e.datetime)} / ${e.status}`).join('\n') || 'なし';
   return `あなたは就職活動の日程管理AIです。今日: ${new Date().toLocaleString('ja-JP')}
@@ -922,7 +983,13 @@ function buildSystemPrompt() {
 8. 日時が本文から特定できない場合は、JSONを作らずにユーザーに日時を質問すること。推測で適当な日時を入れない。
 7. 一覧を聞かれたら見やすく教える。
 8. 簡潔に返答する。
-9. 会社名は日本の就活で一般的な表記に統一する（英語名でもカタカナが一般的なら例: Accenture→アクセンチュア、Sony→ソニー）。`;
+9. 会社名は日本の就活で一般的な表記に統一する（英語名でもカタカナが一般的なら例: Accenture→アクセンチュア、Sony→ソニー）。
+10. マイページ案内の認識（重要）: メールが「マイページ登録のご案内」「ログイン情報のお知らせ」など、日程ではなくマイページのURL・ID・パスワード等の案内である場合は、予定用のJSONではなく、以下の専用JSONを返すこと:
+\`\`\`json
+{"company":"会社名","mypage":true,"loginUrl":"マイページURL","loginId":"ログインID","loginNote":"パスワードやメールアドレスなどの補足"}
+\`\`\`
+   - mypage:true のJSONには datetime を含めない。
+   - 日程とマイページ案内が両方含まれる場合は、予定用JSONとmypage用JSONを別々に返してよい。`;
 }
 
 // ─── Event management ─────────────────────────────────────
