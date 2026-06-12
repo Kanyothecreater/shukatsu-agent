@@ -505,8 +505,15 @@
     </div>
 
     <!-- Events for this company -->
-    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;letter-spacing:0.3px;">📅 関連する予定</div>
-    <div id="cm-events" style="margin-bottom:20px;"></div>
+    <div style="display:flex;align-items:center;margin-bottom:8px;">
+      <span style="font-size:12px;color:var(--text2);letter-spacing:0.3px;">📅 関連する予定</span>
+      <button onclick="toggleLinkPanel()" style="margin-left:auto;background:none;border:1px solid var(--border2);color:var(--accent);border-radius:6px;padding:3px 10px;font-size:11px;font-family:var(--font);cursor:pointer;">+ 予定を関連付け</button>
+    </div>
+    <div id="cm-events" style="margin-bottom:8px;"></div>
+    <div id="cm-link-panel" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:20px;">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">この会社に関連付ける予定にチェック（AIが正しく紐付けられなかった予定を手動で追加できます）</div>
+      <div id="cm-link-list" style="max-height:200px;overflow-y:auto;"></div>
+    </div>
 
     <!-- Login info -->
     <div style="font-size:12px;color:var(--text2);margin-bottom:8px;letter-spacing:0.3px;">🔑 マイページ情報</div>
@@ -1646,6 +1653,11 @@ function sameCompany(a, b) {
   if (shorter.length >= 3 && longer.includes(shorter)) return true;
   return false;
 }
+// Whether an event belongs to a company. Manual linkedCompany overrides AI auto-matching.
+function eventBelongsToCompany(ev, companyName) {
+  if (ev.linkedCompany) return sameCompany(ev.linkedCompany, companyName);
+  return sameCompany(ev.company, companyName);
+}
 // Migrate old stage names to new ones so existing cards don't disappear
 (function migrateStages() {
   const map = { '気になる': '気になる・説明会', '説明会': '気になる・説明会' };
@@ -1668,7 +1680,7 @@ function renderBoard() {
     const cardsHtml = cards.map(c => {
       const linkedMemo = memos.find(m => sameCompany(m.company, c.name));
       const nextEv = events
-        .filter(e => sameCompany(e.company, c.name) && e.status !== 'done' && new Date(e.datetime) >= new Date())
+        .filter(e => eventBelongsToCompany(e, c.name) && e.status !== 'done' && new Date(e.datetime) >= new Date())
         .sort((a,b) => new Date(a.datetime) - new Date(b.datetime))[0];
       const nextEvHtml = nextEv
         ? `<div class="board-card-meta" style="color:var(--accent);margin-top:4px;">📅 ${nextEv.type} ${new Date(nextEv.datetime).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})}</div>`
@@ -1741,7 +1753,7 @@ function openCompanyMemo(id) {
   stageSel.innerHTML = BOARD_STAGES.map(s => `<option value="${s}"${s===c.stage?' selected':''}>${s}</option>`).join('');
   // related events
   const now = new Date();
-  const evs = events.filter(e => sameCompany(e.company, c.name)).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+  const evs = events.filter(e => eventBelongsToCompany(e, c.name)).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
   const cmEvents = document.getElementById('cm-events');
   if (evs.length) {
     cmEvents.innerHTML = evs.map(e => {
@@ -1762,12 +1774,77 @@ function openCompanyMemo(id) {
   document.getElementById('cm-loginnote').value = m.loginNote || '';
   document.getElementById('cm-content').value = m.content || '';
   cmUpdateUrlLink();
+  document.getElementById('cm-link-panel').style.display = 'none';
   document.getElementById('company-modal').classList.add('open');
 }
 function getCmMemo() {
   const c = companies.find(c => c.id === cmCurrentCompanyId);
   if (!c) return null;
   return memos.find(m => sameCompany(m.company, c.name));
+}
+function toggleLinkPanel() {
+  const panel = document.getElementById('cm-link-panel');
+  if (panel.style.display === 'none') {
+    renderLinkPanel();
+    panel.style.display = 'block';
+  } else {
+    panel.style.display = 'none';
+  }
+}
+function renderLinkPanel() {
+  const c = companies.find(c => c.id === cmCurrentCompanyId);
+  if (!c) return;
+  const list = document.getElementById('cm-link-list');
+  // show all events sorted by date, most recent first
+  const sorted = events.slice().sort((a,b)=>new Date(b.datetime)-new Date(a.datetime));
+  if (!sorted.length) { list.innerHTML = `<div style="font-size:12px;color:var(--text3);">予定がありません</div>`; return; }
+  list.innerHTML = sorted.map(e => {
+    const linked = eventBelongsToCompany(e, c.name);
+    const valid = !isNaN(new Date(e.datetime).getTime());
+    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;border-bottom:1px solid var(--border);">
+      <input type="checkbox" ${linked?'checked':''} onchange="toggleEventLink(${e.id}, this.checked)" style="cursor:pointer;">
+      <span style="font-size:12px;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.company} <span style="color:var(--text3)">${e.type||''}</span></span>
+      <span style="font-size:11px;color:var(--text3);font-family:var(--mono);">${valid?formatDatetime(e.datetime):'未定'}</span>
+    </label>`;
+  }).join('');
+}
+function toggleEventLink(eventId, checked) {
+  const c = companies.find(c => c.id === cmCurrentCompanyId);
+  const ev = events.find(e => e.id === eventId);
+  if (!c || !ev) return;
+  if (checked) {
+    // force-link this event to this company
+    ev.linkedCompany = c.name;
+  } else {
+    // unlink: if it was manually linked here, clear it; if auto-matched, set a sentinel to exclude
+    if (ev.linkedCompany && sameCompany(ev.linkedCompany, c.name)) {
+      delete ev.linkedCompany;
+    } else if (sameCompany(ev.company, c.name)) {
+      // auto-matched but user wants it out -> link to empty sentinel
+      ev.linkedCompany = '__none__';
+    }
+  }
+  saveEvents();
+  refreshCompanyModalEvents();
+}
+function refreshCompanyModalEvents() {
+  const c = companies.find(c => c.id === cmCurrentCompanyId);
+  if (!c) return;
+  const evs = events.filter(e => eventBelongsToCompany(e, c.name)).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+  const cmEvents = document.getElementById('cm-events');
+  if (evs.length) {
+    cmEvents.innerHTML = evs.map(e => {
+      const done = e.status === 'done';
+      const valid = !isNaN(new Date(e.datetime).getTime());
+      return `<div onclick="openEventDetail(${e.id})" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:6px;margin-bottom:6px;${done?'opacity:0.5;':''}">
+        <span class="type-badge type-${e.type||'その他'}">${e.type||'その他'}</span>
+        <span style="font-size:12px;color:var(--text2);font-family:var(--mono);">${valid?formatDatetime(e.datetime):'日時未定'}</span>
+        ${done?'<span style="margin-left:auto;font-size:11px;color:var(--accent);">✓ 完了</span>':''}
+      </div>`;
+    }).join('');
+  } else {
+    cmEvents.innerHTML = `<div style="font-size:12px;color:var(--text3);padding:8px 0;">関連する予定はまだありません</div>`;
+  }
 }
 function cmSaveMemo() {
   const m = getCmMemo();
