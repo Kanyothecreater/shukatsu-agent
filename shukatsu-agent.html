@@ -304,6 +304,7 @@
     <button onclick="showView('calendar', this)">📅 カレンダー</button>
     <button onclick="showView('memo', this)">📝 メモ</button>
     <button onclick="showView('board', this)">📊 進捗</button>
+    <button onclick="openProfile()" title="プロフィール（履歴情報）">📋 履歴</button>
     <button onclick="exportData()" title="バックアップをダウンロード">💾</button>
     <button onclick="document.getElementById('import-file').click()" title="バックアップを読み込む">📂</button>
     <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
@@ -445,6 +446,9 @@
   <button onclick="performUndo()" style="background:none;border:none;color:var(--accent);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;padding:0;">↩ 元に戻す</button>
 </div>
 
+<!-- Copy Toast -->
+<div id="copy-toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--accent);color:#0d0f14;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:700;z-index:301;box-shadow:0 8px 24px rgba(0,0,0,0.4);opacity:0;transition:all 0.2s;pointer-events:none;"></div>
+
 <!-- Event Detail Modal -->
 <div id="event-detail-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:100;" class="detail-modal">
   <div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;">
@@ -546,6 +550,19 @@
   </div>
 </div>
 
+<!-- Profile Modal -->
+<div id="profile-modal" class="detail-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:100;">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:24px;width:600px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <span style="font-size:18px;font-weight:700;">📋 履歴情報</span>
+      <button onclick="copyAllProfile()" style="margin-left:auto;background:var(--accent);border:none;color:#0d0f14;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer;">全部コピー</button>
+      <button onclick="closeProfile()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:18px;">ES・マイページで何度も入力する固定情報をここに保存。各項目の 📋 でコピーできます。</div>
+    <div id="profile-fields"></div>
+  </div>
+</div>
+
 <!-- Settings Modal -->
 <div id="settings-modal">
   <div class="modal-box">
@@ -587,6 +604,8 @@ let currentFilter = 'all';
 let currentMemoId = null;
 let companies = JSON.parse(localStorage.getItem('shukatsu_companies') || '[]');
 let trash = JSON.parse(localStorage.getItem('shukatsu_trash') || '[]');
+let profile = JSON.parse(localStorage.getItem('shukatsu_profile') || '{}');
+function saveProfile() { localStorage.setItem('shukatsu_profile', JSON.stringify(profile)); cloudPush(); }
 function saveTrash() { localStorage.setItem('shukatsu_trash', JSON.stringify(trash)); cloudPush(); }
 function addToTrash(type, data) {
   trash.unshift({ id: Date.now()+Math.random(), type, data, deletedAt: new Date().toISOString() });
@@ -1254,6 +1273,64 @@ function deleteFromTrash(trashId) {
   saveTrash();
   renderTrash();
 }
+
+// ─── Profile (履歴情報) ────────────────────────────────────
+const PROFILE_GROUPS = [
+  { group: '基本情報', fields: [
+    ['name','氏名（漢字）'], ['nameKana','氏名（フリガナ）'], ['birthday','生年月日'],
+    ['gender','性別'], ['phone','電話番号'], ['email','メールアドレス'],
+    ['postal','郵便番号'], ['address','現住所'], ['addressKana','現住所（フリガナ）']
+  ]},
+  { group: '学歴', fields: [
+    ['highschool','高校名'], ['highschoolGrad','高校卒業年月'],
+    ['university','大学名'], ['faculty','学部'], ['department','学科'],
+    ['uniEnroll','大学入学年月'], ['uniGrad','大学卒業（見込）年月'],
+    ['gradschool','大学院・研究科'], ['major','専攻'],
+    ['gradEnroll','大学院入学年月'], ['gradComplete','大学院修了見込年月']
+  ]},
+  { group: 'その他', fields: [
+    ['toeic','TOEIC / TOEFL'], ['qualification','資格'], ['language','語学'],
+    ['lab','研究室'], ['research','研究テーマ']
+  ]}
+];
+function openProfile() {
+  renderProfile();
+  document.getElementById('profile-modal').classList.add('open');
+}
+function closeProfile() {
+  document.getElementById('profile-modal').classList.remove('open');
+}
+function renderProfile() {
+  const box = document.getElementById('profile-fields');
+  box.innerHTML = PROFILE_GROUPS.map(g => `
+    <div style="font-size:12px;font-weight:600;color:var(--accent);margin:16px 0 8px;letter-spacing:0.5px;">${g.group}</div>
+    ${g.fields.map(([key,label]) => `
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:7px;">
+        <label style="font-size:11px;color:var(--text3);width:120px;flex-shrink:0;">${label}</label>
+        <input type="text" value="${(profile[key]||'').replace(/"/g,'&quot;')}" oninput="updateProfileField('${key}', this.value)"
+          style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;">
+        <button onclick="copyProfileField('${key}')" title="コピー" style="background:none;border:1px solid var(--border2);border-radius:6px;padding:5px 9px;font-size:12px;cursor:pointer;flex-shrink:0;">📋</button>
+      </div>
+    `).join('')}
+  `).join('');
+}
+function updateProfileField(key, value) {
+  profile[key] = value;
+  saveProfile();
+}
+function copyProfileField(key) {
+  const v = profile[key] || '';
+  if (v) navigator.clipboard.writeText(v);
+}
+function copyAllProfile() {
+  const lines = [];
+  PROFILE_GROUPS.forEach(g => {
+    g.fields.forEach(([key,label]) => {
+      if (profile[key]) lines.push(`${label}: ${profile[key]}`);
+    });
+  });
+  if (lines.length) navigator.clipboard.writeText(lines.join('\n'));
+}
 function filterEvents(f, btn) {
   currentFilter = f;
   document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
@@ -1494,54 +1571,80 @@ const BOARD_STAGES = ['気になる・説明会', 'OB・OG訪問', 'ES提出', '
 
 // Fuzzy company-name matching: トヨタ ≈ トヨタ自動車 ≈ トヨタ株式会社
 // Common English <-> katakana company name aliases (Japanese 就活)
-const COMPANY_ALIASES = [
-  ['accenture','アクセンチュア'],
-  ['pwc','プライスウォーターハウスクーパース'],
-  ['deloitte','デロイト'],
-  ['ibm','アイビーエム'],
-  ['sony','ソニー'],
-  ['toyota','トヨタ'],
-  ['honda','ホンダ'],
-  ['panasonic','パナソニック'],
-  ['nec','エヌイーシー'],
-  ['nri','野村総合研究所'],
-  ['ntt','エヌティティ'],
-  ['kpmg','ケーピーエムジー'],
-  ['ey','アーンストアンドヤング'],
-  ['rakuten','楽天'],
-  ['mitsubishi','三菱'],
-  ['hitachi','日立'],
-  ['fujitsu','富士通'],
-  ['canon','キヤノン'],
-  ['nikon','ニコン'],
-  ['toshiba','東芝'],
+// Company database: canonical name + all known aliases (English, abbreviation, variants).
+// Known companies match ONLY by exact canonical/alias — never fuzzy — so look-alikes
+// like 野村総研(NRI) and 日本総研 are never confused.
+const COMPANY_DB = [
+  // IT / コンサル
+  { name:'アクセンチュア', aka:['accenture'] },
+  { name:'アビーム', aka:['abeam','アビームコンサルティング'] },
+  { name:'PwCコンサルティング', aka:['pwc','pwcitsc','pwcコンサルティング合同会社'] },
+  { name:'KPMGコンサルティング', aka:['kpmg'] },
+  { name:'EYストラテジー・アンド・コンサルティング', aka:['ey','eysc','eyストラテジーアンドコンサルティング'] },
+  { name:'デロイトトーマツコンサルティング', aka:['deloitte','デロイト','デロイトトーマツ'] },
+  { name:'野村総合研究所', aka:['nri','野村総研'] },
+  { name:'日本総合研究所', aka:['jri','日本総研'] },
+  { name:'三菱総合研究所', aka:['mri','三菱総研'] },
+  { name:'NTTデータ', aka:['nttデータ','nttdata','ntt data'] },
+  { name:'日本IBM', aka:['ibm','アイビーエム','日本アイビーエム'] },
+  // 半導体 / 素材 / メーカー
+  { name:'東京エレクトロン', aka:['tel','tokyo electron'] },
+  { name:'信越化学工業', aka:['信越化学','信越','shinetsu','shin-etsu'] },
+  { name:'JSR', aka:['jsr'] },
+  { name:'ソニー', aka:['sony','ソニーグループ'] },
+  { name:'パナソニック', aka:['panasonic'] },
+  { name:'パナソニックエナジー', aka:[] },
+  { name:'NEC', aka:['nec','日本電気','エヌイーシー'] },
+  { name:'NECプラットフォームズ', aka:[] },
+  { name:'富士通', aka:['fujitsu'] },
+  { name:'日立製作所', aka:['hitachi','日立'] },
+  { name:'トヨタ', aka:['toyota','トヨタ自動車'] },
+  { name:'日産', aka:['nissan','日産自動車'] },
+  { name:'ホンダ', aka:['honda','本田技研工業','本田技研'] },
+  { name:'キヤノン', aka:['canon'] },
+  { name:'ニコン', aka:['nikon'] },
+  { name:'東芝', aka:['toshiba'] },
+  { name:'楽天', aka:['rakuten','楽天グループ'] },
 ];
-function normalizeCompany(name) {
-  if (!name) return '';
-  let s = String(name)
-    // full-width ASCII -> half-width
-    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
-    .replace(/株式会社|有限会社|合同会社|（株）|\(株\)|㈱/g, '')
-    .replace(/グループ|ホールディングス|HD|自動車|商事|製作所|工業|電機|銀行|コンサルティング|ジャパン|日本/g, '')
-    .replace(/[\s　・,，.。&＆\-－—]/g, '')
-    .toLowerCase()
-    .trim();
-  // map known English alias to its katakana canonical form
-  for (const [en, ja] of COMPANY_ALIASES) {
-    if (s === en || s.includes(en)) return normalizeKana(ja);
-    if (s.includes(normalizeKana(ja))) return normalizeKana(ja);
-  }
-  return normalizeKana(s);
-}
 // hiragana -> katakana so the two scripts compare equal
 function normalizeKana(s) {
   return String(s).replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+}
+// base normalization: strip org-form suffixes, full→half width, drop spaces/symbols, lowercase, hira→kata
+function normalizeBase(name) {
+  if (!name) return '';
+  let s = String(name)
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+    .replace(/株式会社|有限会社|合同会社|（株）|\(株\)|㈱/g, '')
+    .replace(/グループ|ホールディングス|ＨＤ/g, '')
+    .replace(/\bhd\b/gi, '')
+    .replace(/[\s　・,，.。&＆\-－—]/g, '')
+    .toLowerCase()
+    .trim();
+  return normalizeKana(s);
+}
+// Returns a canonical key. Known companies return '##'+canonical (matched exact-only).
+function normalizeCompany(name) {
+  const base = normalizeBase(name);
+  if (!base) return '';
+  for (const c of COMPANY_DB) {
+    const keys = [c.name, ...c.aka].map(normalizeBase);
+    if (keys.includes(base)) return '##' + normalizeBase(c.name);
+  }
+  return base;
 }
 function sameCompany(a, b) {
   if (!a || !b) return false;
   const na = normalizeCompany(a), nb = normalizeCompany(b);
   if (!na || !nb) return false;
-  return na === nb || na.includes(nb) || nb.includes(na);
+  if (na === nb) return true;
+  // a known company (## prefix) matches ONLY exactly — never fuzzy
+  if (na.startsWith('##') || nb.startsWith('##')) return false;
+  // both unknown companies: cautious partial match for spelling variations
+  const shorter = na.length <= nb.length ? na : nb;
+  const longer = na.length <= nb.length ? nb : na;
+  if (shorter.length >= 3 && longer.includes(shorter)) return true;
+  return false;
 }
 // Migrate old stage names to new ones so existing cards don't disappear
 (function migrateStages() {
@@ -1962,7 +2065,7 @@ document.addEventListener('click', e => {
 // ─── Export / Import ──────────────────────────────────────
 function exportData() {
   const data = {
-    events, memos, companies, trash,
+    events, memos, companies, trash, profile,
     exportedAt: new Date().toISOString(),
     version: 1
   };
@@ -1985,6 +2088,8 @@ function importData(e) {
       if (data.events) { events = data.events; saveEvents(); }
       if (data.memos) { memos = data.memos; saveMemos(); }
       if (data.companies) { companies = data.companies; saveCompanies(); }
+      if (data.trash) { trash = data.trash; saveTrash(); }
+      if (data.profile) { profile = data.profile; saveProfile(); }
       renderEvents(); renderMemoList();
       alert('✅ データを読み込みました！');
     } catch (err) {
@@ -2007,7 +2112,7 @@ function cloudPush() {
     try {
       const payload = {
         key: 'user_' + settings.syncKey,
-        value: { events, memos, companies, trash },
+        value: { events, memos, companies, trash, profile },
         updated_at: new Date().toISOString()
       };
       await fetch(`${SUPABASE_URL}/rest/v1/app_data`, {
@@ -2037,6 +2142,7 @@ async function cloudPull(showMsg) {
       if (d.memos) { memos = d.memos; localStorage.setItem('shukatsu_memos', JSON.stringify(memos)); }
       if (d.companies) { companies = d.companies; localStorage.setItem('shukatsu_companies', JSON.stringify(companies)); }
       if (d.trash) { trash = d.trash; localStorage.setItem('shukatsu_trash', JSON.stringify(trash)); }
+      if (d.profile) { profile = d.profile; localStorage.setItem('shukatsu_profile', JSON.stringify(profile)); }
       renderEvents(); renderMemoList();
       if (showMsg) addMessage('assistant', '☁️ クラウドからデータを復元しました！');
     } else if (showMsg) {
