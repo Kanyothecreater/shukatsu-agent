@@ -489,6 +489,11 @@
       <span id="detail-status" style="margin-left:auto;font-size:12px;"></span>
     </div>
     <div style="font-size:13px;color:var(--text2);font-family:var(--mono);margin-bottom:12px;">📅 <span id="detail-time"></span></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+      <span style="font-size:12px;color:var(--text3);">🎨 進捗段階（カレンダーの色）</span>
+      <span id="detail-stage-dot" style="width:12px;height:12px;border-radius:50%;display:inline-block;"></span>
+      <select id="detail-stage" onchange="onDetailStageChange()" style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;cursor:pointer;"></select>
+    </div>
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:20px;">
       <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">⏰ 日時を編集（期間予定は終了も入力）</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -1613,6 +1618,11 @@ function openEventDetail(id) {
   };
   document.getElementById('detail-start').value = toLocalInput(ev.datetime);
   document.getElementById('detail-end').value = toLocalInput(ev.datetimeEnd);
+  // populate stage dropdown — current value is manual stage, else inferred
+  const stageSel = document.getElementById('detail-stage');
+  const curStage = eventStage(ev) || BOARD_STAGES[0];
+  stageSel.innerHTML = BOARD_STAGES.map(s => `<option value="${s}" ${s===curStage?'selected':''}>${s}</option>`).join('');
+  document.getElementById('detail-stage-dot').style.background = stageColor(curStage);
   document.getElementById('detail-note').value = ev.note || '';
   document.getElementById('detail-detail').value = ev.detail || '';
   document.getElementById('detail-status').textContent = ev.status === 'done' ? '✓ 完了' : '進行中';
@@ -1659,6 +1669,7 @@ async function saveEventDetail() {
   if (!ev) return;
   ev.note = document.getElementById('detail-note').value;
   ev.detail = document.getElementById('detail-detail').value;
+  ev.stage = document.getElementById('detail-stage').value;
   // read edited datetimes (input format YYYY-MM-DDTHH:mm -> add :00 seconds)
   const startVal = document.getElementById('detail-start').value;
   const endVal = document.getElementById('detail-end').value;
@@ -1681,6 +1692,10 @@ async function saveEventDetail() {
 }
 function clearDetailEnd() {
   document.getElementById('detail-end').value = '';
+}
+function onDetailStageChange() {
+  const stage = document.getElementById('detail-stage').value;
+  document.getElementById('detail-stage-dot').style.background = stageColor(stage);
 }
 function closeEventDetail() {
   document.getElementById('event-detail-modal').classList.remove('open');
@@ -1779,8 +1794,7 @@ function renderCalendar() {
         let role = 'r-mid';
         if (isStartSeg) role = 'r-start'; else if (isEndSeg) role = 'r-end';
         const showLabel = isStartSeg || isWeekStart;
-        const comp = companies.find(c => sameCompany(c.name, ev.company));
-        const color = comp ? stageColor(comp.stage) : '#6b7186';
+        const color = eventColor(ev);
         laneHtml += `<div class="cal-range ${role}" style="background:${color};" onclick="openEventDetail(${ev.id})">${showLabel?ev.company:'&nbsp;'}</div>`;
       } else {
         laneHtml += `<div class="cal-range-spacer"></div>`;
@@ -1818,6 +1832,31 @@ const STAGE_COLORS = {
   '内定':            '#ec4899', // pink
 };
 function stageColor(stage) { return STAGE_COLORS[stage] || '#6b7186'; }
+// Infer a board stage from the event type (used for calendar color when not set manually)
+function typeToStage(type) {
+  const t = (type || '').toLowerCase();
+  if (/es|エントリー|ｴﾝﾄﾘｰ|応募/.test(t)) return 'ES提出';
+  if (/webテスト|web|テスト|適性|筆記|玉手箱|tg-?web|spi|gab|cab/.test(t)) return 'Webテスト';
+  if (/gd|グループ|ディスカッション|ｸﾞﾙｰﾌﾟ/.test(t)) return 'GD';
+  if (/最終|役員/.test(t)) return '最終面接';
+  if (/二次|2次|第二|二回/.test(t)) return '二次面接';
+  if (/一次|1次|第一|面接/.test(t)) return '一次面接';
+  if (/内定|内々定/.test(t)) return '内定';
+  if (/説明会|セミナー|座談|面談|質問|キャリア|気になる/.test(t)) return '気になる・説明会';
+  return null;
+}
+// Resolve the stage used to color an event: manual override > inferred from type > company's current stage
+function eventStage(ev) {
+  if (ev.stage && BOARD_STAGES.includes(ev.stage)) return ev.stage;
+  const inferred = typeToStage(ev.type);
+  if (inferred) return inferred;
+  const comp = companies.find(c => sameCompany(c.name, ev.company));
+  return comp ? comp.stage : null;
+}
+function eventColor(ev) {
+  const st = eventStage(ev);
+  return st ? stageColor(st) : '#6b7186';
+}
 
 // Fuzzy company-name matching: トヨタ ≈ トヨタ自動車 ≈ トヨタ株式会社
 // Common English <-> katakana company name aliases (Japanese 就活)
