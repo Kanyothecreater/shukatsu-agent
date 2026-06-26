@@ -673,9 +673,6 @@ applyTheme(localStorage.getItem('shukatsu_theme') || 'dark');
 
 // ─── Init ────────────────────────────────────────────────
 if (settings.groqKey) document.getElementById('setup-banner').style.display = 'none';
-renderEvents();
-renderMemoList();
-renderToday();
 
 // ─── View switching ───────────────────────────────────────
 function showView(v, btn) {
@@ -2480,6 +2477,12 @@ async function cloudPull(showMsg) {
 }
 
 if (settings.syncKey) cloudPull(false);
+
+// ─── Initial render (runs last, after ALL definitions are initialized) ───
+renderEvents();
+renderMemoList();
+renderToday();
+console.log('✅ 就活Agent v2 起動完了（初期化順序バグ修正済み）');
 </script>
 </body>
 </html>
