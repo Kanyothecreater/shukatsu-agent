@@ -213,16 +213,11 @@
   .cal-dot.type-筆記 { background: rgba(251,191,36,0.15); color: var(--amber); }
   .cal-dot.type-その他 { background: rgba(139,144,158,0.15); color: var(--text2); }
   /* Apple-style multi-day range bars (lanes) */
-  .cal-range { font-size: 10px; font-weight: 600; line-height: 15px; height: 15px; padding: 0 5px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; box-sizing: border-box; background: var(--accent); color: var(--bar-text); }
-  .cal-range.r-start { border-radius: 7px 0 0 7px; margin-right: -7px; }
+  .cal-range { font-size: 10px; font-weight: 600; line-height: 16px; height: 16px; padding: 0 6px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; box-sizing: border-box; color: #fff; }
+  .cal-range.r-start { border-radius: 8px 0 0 8px; margin-right: -7px; }
   .cal-range.r-mid { border-radius: 0; margin-left: -7px; margin-right: -7px; }
-  .cal-range.r-end { border-radius: 0 7px 7px 0; margin-left: -7px; }
-  .cal-range.type-面接 { background: var(--purple); color:var(--bar-text); }
-  .cal-range.type-ES { background: var(--blue); color:var(--bar-text); }
-  .cal-range.type-説明会 { background: var(--accent); color:var(--bar-text); }
-  .cal-range.type-筆記 { background: var(--amber); color:var(--bar-text); }
-  .cal-range.type-その他 { background: var(--text2); color:#fff; }
-  .cal-range-spacer { height: 15px; margin-bottom: 2px; }
+  .cal-range.r-end { border-radius: 0 8px 8px 0; margin-left: -7px; }
+  .cal-range-spacer { height: 16px; margin-bottom: 2px; }
 
   /* ── Memo view ── */
   #memo-view { flex-direction: row; }
@@ -1787,7 +1782,9 @@ function renderCalendar() {
         let role = 'r-mid';
         if (isStartSeg) role = 'r-start'; else if (isEndSeg) role = 'r-end';
         const showLabel = isStartSeg || isWeekStart;
-        laneHtml += `<div class="cal-range type-${ev.type||'その他'} ${role}" onclick="openEventDetail(${ev.id})">${showLabel?ev.company:'&nbsp;'}</div>`;
+        const comp = companies.find(c => sameCompany(c.name, ev.company));
+        const color = comp ? stageColor(comp.stage) : '#6b7186';
+        laneHtml += `<div class="cal-range ${role}" style="background:${color};" onclick="openEventDetail(${ev.id})">${showLabel?ev.company:'&nbsp;'}</div>`;
       } else {
         laneHtml += `<div class="cal-range-spacer"></div>`;
       }
@@ -1811,7 +1808,19 @@ function renderCalendar() {
 }
 
 // ─── Progress Board ───────────────────────────────────────
-const BOARD_STAGES = ['気になる・説明会', 'OB・OG訪問', 'ES提出', 'Webテスト', 'GD', '一次面接', '二次面接', '最終面接', '内定'];
+const BOARD_STAGES = ['気になる・説明会', 'ES提出', 'Webテスト', 'GD', '一次面接', '二次面接', '最終面接', '内定'];
+// Fixed color per stage — shared by the calendar bars and the progress board
+const STAGE_COLORS = {
+  '気になる・説明会': '#8b5cf6', // violet
+  'ES提出':          '#3b82f6', // blue
+  'Webテスト':       '#0ea5e9', // sky
+  'GD':              '#14b8a6', // teal
+  '一次面接':        '#10b981', // emerald
+  '二次面接':        '#f59e0b', // amber
+  '最終面接':        '#f97316', // orange
+  '内定':            '#ec4899', // pink
+};
+function stageColor(stage) { return STAGE_COLORS[stage] || '#6b7186'; }
 
 // Fuzzy company-name matching: トヨタ ≈ トヨタ自動車 ≈ トヨタ株式会社
 // Common English <-> katakana company name aliases (Japanese 就活)
@@ -1897,7 +1906,7 @@ function eventBelongsToCompany(ev, companyName) {
 }
 // Migrate old stage names to new ones so existing cards don't disappear
 (function migrateStages() {
-  const map = { '気になる': '気になる・説明会', '説明会': '気になる・説明会' };
+  const map = { '気になる': '気になる・説明会', '説明会': '気になる・説明会', 'OB・OG訪問': '気になる・説明会' };
   let changed = false;
   companies.forEach(c => {
     if (!BOARD_STAGES.includes(c.stage)) {
@@ -1913,6 +1922,7 @@ let draggedCompanyId = null;
 function renderBoard() {
   const container = document.getElementById('board-container');
   container.innerHTML = BOARD_STAGES.map((stage, idx) => {
+    const col = stageColor(stage);
     const cards = companies.filter(c => c.stage === stage);
     const cardsHtml = cards.map(c => {
       const linkedMemo = memos.find(m => sameCompany(m.company, c.name));
@@ -1920,10 +1930,10 @@ function renderBoard() {
         .filter(e => eventBelongsToCompany(e, c.name) && e.status !== 'done' && new Date(e.datetime) >= new Date())
         .sort((a,b) => new Date(a.datetime) - new Date(b.datetime))[0];
       const nextEvHtml = nextEv
-        ? `<div class="board-card-meta" style="color:var(--accent);margin-top:4px;">📅 ${nextEv.type} ${new Date(nextEv.datetime).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})}</div>`
+        ? `<div class="board-card-meta" style="color:${col};margin-top:4px;">📅 ${nextEv.type} ${new Date(nextEv.datetime).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})}</div>`
         : '';
       return `
-      <div class="board-card" draggable="true" data-id="${c.id}"
+      <div class="board-card" draggable="true" data-id="${c.id}" style="border-left:3px solid ${col};"
         ondragstart="boardDragStart(event, ${c.id})" ondragend="boardDragEnd(event)"
         onclick="openCompanyMemo(${c.id})">
         <div style="display:flex;align-items:center;gap:4px;">
@@ -1936,8 +1946,8 @@ function renderBoard() {
     }).join('');
     const addBox = idx === 0 ? `<div class="board-add"><input type="text" placeholder="＋ 会社を追加 (Enter)" onkeydown="addCompany(event)"></div>` : '';
     return `<div class="board-column">
-      <div class="board-col-header">
-        <span class="board-col-title">${stage}</span>
+      <div class="board-col-header" style="border-top:3px solid ${col};">
+        <span class="board-col-title"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:6px;"></span>${stage}</span>
         <span class="board-col-count">${cards.length}</span>
       </div>
       <div class="board-col-body" data-stage="${stage}"
