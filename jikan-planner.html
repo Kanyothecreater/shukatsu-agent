@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#14151a">
+<link rel="manifest" href="/jikan-manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="时间规划">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<link rel="icon" type="image/png" href="/jp-icon-192.png">
+<title>时间规划</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf9f6;
+    --surface: #ffffff;
+    --surface2: #f3f2ee;
+    --grid: #e7e5df;
+    --grid-strong: #d4d1c8;
+    --text: #1a1c20;
+    --text2: #6b6f76;
+    --text3: #a0a3aa;
+    --accent: #2563eb;
+    --accent-soft: #dbe4fe;
+    --course: #6366f1;
+    --plan: #0ea5e9;
+    --done: #10b981;
+    --miss: #f43f5e;
+    --free: #84cc16;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --disp: 'Space Grotesk', 'Noto Sans JP', sans-serif;
+    --body: 'Noto Sans JP', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+  :root[data-theme="dark"] {
+    --bg: #14151a;
+    --surface: #1c1e26;
+    --surface2: #262932;
+    --grid: #2a2d37;
+    --grid-strong: #3a3e4a;
+    --text: #f0f1f5;
+    --text2: #a3a8b5;
+    --text3: #6b7080;
+    --accent: #60a5fa;
+    --accent-soft: rgba(96,165,250,0.18);
+    --course: #818cf8;
+    --plan: #38bdf8;
+    --done: #34d399;
+    --miss: #fb7185;
+    --free: #a3e635;
+    --border: rgba(255,255,255,0.09);
+    --border2: rgba(255,255,255,0.16);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text); font-family: var(--body);
+    font-size: 14px; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  /* Header */
+  header {
+    display: flex; align-items: center; gap: 16px; padding: 14px 22px;
+    border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
+  }
+  .logo { font-family: var(--disp); font-weight: 700; font-size: 18px; letter-spacing: -0.02em; }
+  .logo .accent { color: var(--accent); }
+  .wk-nav { display: flex; align-items: center; gap: 6px; }
+  .wk-nav button, .icon-btn {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; color: var(--text); font-family: var(--body); font-size: 13px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .wk-nav button:hover, .icon-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+  .wk-label { font-family: var(--mono); font-size: 13px; color: var(--text2); min-width: 130px; text-align: center; }
+  .vm-sel { background: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; }
+  .ai-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .ai-tab { flex: 1; padding: 8px 6px; border: 1px solid var(--border); background: var(--surface2); border-radius: 8px; cursor: pointer; font-size: 12px; color: var(--text2); font-family: var(--body); }
+  .ai-tab.sel { background: var(--accent); color: #fff; border-color: var(--accent); }
+  #ai-output { font-size: 13px; line-height: 1.7; color: var(--text); }
+  #ai-output h4 { font-family: var(--disp); font-size: 14px; margin: 12px 0 6px; color: var(--accent); }
+  #ai-output ul { margin: 6px 0 6px 18px; }
+  #ai-output li { margin-bottom: 4px; }
+  #ai-output .ai-stat { display: inline-block; background: var(--surface2); border-radius: 6px; padding: 3px 9px; margin: 2px 4px 2px 0; font-family: var(--mono); font-size: 12px; }
+  .ai-loading { text-align: center; padding: 20px; color: var(--text3); font-size: 13px; }
+  .ai-spin { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* Month view */
+  .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; gap: 1px; background: var(--grid); height: 100%; min-height: 560px; }
+  .m-dow { background: var(--surface); text-align: center; padding: 8px 0; font-size: 11px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .m-cell { background: var(--surface); padding: 6px 7px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; overflow: hidden; transition: background 0.12s; min-height: 84px; }
+  .m-cell:hover { background: var(--surface2); }
+  .m-cell.other { opacity: 0.4; }
+  .m-cell.today { background: var(--accent-soft); }
+  .m-cell .m-date { font-family: var(--disp); font-size: 14px; font-weight: 600; }
+  .m-cell.today .m-date { color: var(--accent); }
+  .m-free { font-family: var(--mono); font-size: 10px; color: var(--free); }
+  .m-bars { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+  .m-bar { height: 4px; border-radius: 2px; }
+  .m-more { font-size: 9px; color: var(--text3); }
+  .spacer { flex: 1; }
+  /* Free-time banner */
+  .freebar { display: flex; gap: 18px; align-items: center; font-size: 13px; }
+  .freebar .stat { display: flex; flex-direction: column; align-items: flex-end; }
+  .freebar .stat .num { font-family: var(--mono); font-size: 17px; font-weight: 500; color: var(--accent); line-height: 1; }
+  .freebar .stat .lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+  /* Main layout */
+  .main { flex: 1; display: flex; overflow: hidden; }
+  .week-wrap { flex: 1; overflow: auto; position: relative; }
+  /* Week grid */
+  .week-grid { display: grid; grid-template-columns: 56px repeat(7, 1fr); min-width: 820px; }
+  .col-head {
+    position: sticky; top: 0; z-index: 5; background: var(--surface);
+    border-bottom: 2px solid var(--grid-strong); border-right: 1px solid var(--grid);
+    padding: 8px 6px; text-align: center; cursor: pointer;
+  }
+  .col-head:hover { background: var(--surface2); }
+  .col-head.today { background: var(--accent-soft); }
+  .col-head .dow { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; }
+  .col-head .dnum { font-family: var(--disp); font-size: 18px; font-weight: 600; margin-top: 1px; }
+  .col-head.today .dnum { color: var(--accent); }
+  .col-head .free-mini { font-family: var(--mono); font-size: 10px; color: var(--free); margin-top: 2px; }
+  .time-gutter-head { position: sticky; top: 0; z-index: 6; background: var(--surface); border-bottom: 2px solid var(--grid-strong); border-right: 1px solid var(--grid); }
+  .time-label {
+    grid-column: 1; border-right: 1px solid var(--grid); border-bottom: 1px solid transparent;
+    font-family: var(--mono); font-size: 10px; color: var(--text3); text-align: right;
+    padding-right: 6px; height: 24px; position: relative; top: -7px;
+  }
+  .slot {
+    border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid);
+    height: 24px; position: relative; cursor: pointer;
+  }
+  .slot.half { border-bottom-color: var(--grid); }
+  .slot.hour { border-bottom: 1px solid var(--grid-strong); }
+  .slot:hover { background: var(--accent-soft); }
+  .slot.today-col { background: rgba(37,99,235,0.03); }
+  :root[data-theme="dark"] .slot.today-col { background: rgba(96,165,250,0.05); }
+  /* Event blocks (absolutely positioned over slots) */
+  .ev-block {
+    position: absolute; left: 2px; right: 2px; border-radius: 5px; padding: 2px 5px;
+    font-size: 10px; line-height: 1.2; overflow: hidden; cursor: pointer; z-index: 3;
+    color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  .ev-block .et { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .resize-handle { position: absolute; left: 0; right: 0; bottom: 0; height: 7px; cursor: ns-resize; z-index: 4; }
+  .resize-handle:hover { background: rgba(255,255,255,0.3); }
+  body.dragging-active { cursor: grabbing; user-select: none; }
+  body.dragging-active .ev-block { pointer-events: none; }
+  body.dragging-active .slot:hover { background: var(--accent-soft); }
+  .ev-block .etime { font-family: var(--mono); font-size: 9px; opacity: 0.85; }
+  .ev-course { background: var(--course); }
+  .ev-shukatsu { background: #2dd4bf; color: #0d2b28; cursor: help; }
+  :root[data-theme="dark"] .ev-shukatsu { color: #04140f; }
+  .ev-plan { background: var(--plan); }
+  .ev-done { background: var(--done); }
+  .ev-miss { background: var(--miss); }
+  /* Sidebar (todos) */
+  .sidebar {
+    width: 280px; flex-shrink: 0; border-left: 1px solid var(--border); background: var(--surface);
+    display: flex; flex-direction: column; overflow: hidden; transition: transform 0.2s, width 0.2s;
+  }
+  .sidebar.hidden { width: 0; border-left: none; }
+  .sidebar.hidden > * { display: none; }
+  .side-sec { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .side-title { font-family: var(--disp); font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; display: flex; align-items: center; }
+  .side-title .add { margin-left: auto; cursor: pointer; color: var(--accent); font-size: 16px; }
+  .todo-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; color: var(--text); font-family: var(--body); font-size: 13px; outline: none; }
+  .todo-input:focus { border-color: var(--accent); }
+  .todo-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 40vh; overflow-y: auto; }
+  .todo {
+    display: flex; align-items: center; gap: 8px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; font-size: 13px;
+    cursor: grab; transition: all 0.12s;
+  }
+  .todo:hover { border-color: var(--accent); }
+  .todo.dragging { opacity: 0.4; }
+  .todo .est { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--text3); white-space: nowrap; }
+  .todo-dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; cursor: pointer; border: 2px solid transparent; transition: transform 0.1s; }
+  .todo-dot:hover { transform: scale(1.2); }
+  .todo .ttext { flex: 1; cursor: pointer; }
+  .todo .done-x { cursor: pointer; color: var(--text3); }
+  .todo.completed { opacity: 0.5; }
+  .todo.completed .ttext { text-decoration: line-through; }
+  .empty-hint { font-size: 12px; color: var(--text3); text-align: center; padding: 16px 8px; line-height: 1.5; }
+  /* Modal */
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .modal.open { display: flex; }
+  .modal-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; padding: 22px; width: 420px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+  .modal-card h3 { font-family: var(--disp); font-size: 16px; margin-bottom: 16px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 11px; color: var(--text3); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .field input, .field select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
+    padding: 9px 11px; color: var(--text); font-family: var(--body); font-size: 13px; outline: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .row2 { display: flex; gap: 10px; }
+  .row2 > * { flex: 1; }
+  .btn-row { display: flex; gap: 8px; margin-top: 18px; }
+  .btn { flex: 1; border: none; border-radius: 8px; padding: 10px; font-family: var(--body); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+  .btn-danger { background: none; color: var(--miss); border: 1px solid var(--border); }
+  .dow-pick { display: flex; gap: 4px; }
+  .dow-pick button { flex: 1; padding: 8px 0; border: 1px solid var(--border); background: var(--surface2); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text2); }
+  .dow-pick button.sel { background: var(--course); color: #fff; border-color: var(--course); }
+  /* Day detail (plan vs actual) */
+  .day-detail { position: fixed; inset: 0; background: var(--bg); z-index: 90; display: none; flex-direction: column; }
+  .day-detail.open { display: flex; }
+  .dd-head { display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .dd-title { font-family: var(--disp); font-size: 17px; font-weight: 600; }
+  .dd-cols { flex: 1; display: grid; grid-template-columns: 48px 1fr 1fr; overflow: auto; }
+  .dd-colhead { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 2px solid var(--grid-strong); padding: 8px; text-align: center; font-family: var(--disp); font-size: 13px; font-weight: 600; }
+  .dd-colhead.plan { color: var(--plan); }
+  .dd-colhead.actual { color: var(--done); }
+  .dd-slot { border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid); height: 28px; position: relative; cursor: pointer; }
+  .dd-slot.hour { border-bottom-color: var(--grid-strong); }
+  .dd-slot:hover { background: var(--accent-soft); }
+  .dd-tlabel { font-family: var(--mono); font-size: 10px; color: var(--text3); text-align: right; padding-right: 6px; height: 28px; position: relative; top: -7px; border-right: 1px solid var(--grid); }
+  @media (max-width: 700px) {
+    .sidebar {
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 80;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.25); transform: translateX(0);
+    }
+    .sidebar.hidden { width: 280px; transform: translateX(100%); }
+    .sidebar.hidden > * { display: block; }
+    .week-grid { min-width: 640px; }
+    .freebar { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">时间<span class="accent">规划</span></div>
+  <div class="wk-nav">
+    <button onclick="changeWeek(-1)">‹</button>
+    <button onclick="changeWeek(0)" id="today-btn">本周</button>
+    <button onclick="changeWeek(1)">›</button>
+  </div>
+  <span class="wk-label" id="wk-label"></span>
+  <div class="wk-nav" style="margin-left:8px;">
+    <button id="vm-week" class="vm-sel" onclick="setViewMode('week')">周</button>
+    <button id="vm-month" onclick="setViewMode('month')">月</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="freebar" id="freebar"></div>
+  <button class="icon-btn" onclick="openCourseModal()">📚 课程</button>
+  <button class="icon-btn" onclick="toggleSidebar()" id="todo-toggle">📝 待办</button>
+  <button class="icon-btn" onclick="openAIPanel()" id="ai-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);">✨ AI</button>
+  <button class="icon-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+  <button class="icon-btn" onclick="openSettings()" title="設定">⚙️</button>
+</header>
+
+<div class="main">
+  <div class="week-wrap">
+    <div class="week-grid" id="week-grid"></div>
+    <div class="month-grid" id="month-grid" style="display:none;"></div>
+  </div>
+  <aside class="sidebar">
+    <div class="side-sec">
+      <div class="side-title">待办清单</div>
+      <input class="todo-input" id="todo-input" placeholder="输入任务后按 Enter" onkeydown="if(event.key==='Enter')addTodo()">
+      <div class="todo-list" id="todo-list"></div>
+    </div>
+    <div class="side-sec" style="flex:1;overflow-y:auto;">
+      <div class="side-title">使用方法</div>
+      <div class="empty-hint" style="text-align:left;">
+        ・点空白格子 → 添加计划<br>
+        ・拖任务到格子 → 变成计划<br>
+        ・点日期 → 记录那天的<br>　「计划 vs 实绩」<br>
+        ・用 📚 登记每周的课
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- Plan event modal -->
+<div class="modal" id="event-modal">
+  <div class="modal-card">
+    <h3 id="event-modal-title">添加计划</h3>
+    <div class="field"><label>标题</label><input id="ev-title" placeholder="例: 复习FVCOM"></div>
+    <div class="row2">
+      <div class="field"><label>开始</label><input type="time" id="ev-start" step="1800"></div>
+      <div class="field"><label>结束</label><input type="time" id="ev-end" step="1800"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="savePlanEvent()">保存</button>
+      <button class="btn btn-danger" id="ev-delete" onclick="deletePlanEvent()" style="display:none;flex:0 0 auto;padding:10px 14px;">删除</button>
+      <button class="btn btn-ghost" onclick="closeModal('event-modal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Course / fixed-event modal -->
+<div class="modal" id="course-modal">
+  <div class="modal-card">
+    <h3>固定添加计划</h3>
+    <div class="field">
+      <label>種類</label>
+      <div class="dow-pick" id="c-type">
+        <button class="sel" onclick="setCourseType('course')" id="ct-course">📚 每周的课</button>
+        <button onclick="setCourseType('fixed')" id="ct-fixed">📌 单次固定预定</button>
+      </div>
+    </div>
+    <div class="field"><label>名称</label><input id="c-name" placeholder="例: 海洋数値計算 / 病院"></div>
+    <div class="field" id="c-dow-field"><label>星期（每周）</label>
+      <div class="dow-pick" id="c-dow"></div>
+    </div>
+    <div class="field" id="c-date-field" style="display:none;"><label>日期</label>
+      <input type="date" id="c-date">
+    </div>
+    <div class="row2">
+      <div class="field"><label>开始</label><input type="time" id="c-start" step="1800" value="09:00"></div>
+      <div class="field"><label>结束</label><input type="time" id="c-end" step="1800" value="10:30"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveCourse()">添加</button>
+      <button class="btn btn-ghost" onclick="closeModal('course-modal')">关闭</button>
+    </div>
+    <div style="margin-top:16px;" id="course-list"></div>
+  </div>
+</div>
+
+<!-- Day-detail entry modal (plan or actual) -->
+<div class="modal" id="dd-modal" style="z-index:120;">
+  <div class="modal-card">
+    <h3 id="dd-modal-title">添加记录</h3>
+    <div class="field"><label>内容</label><input id="dd-title" placeholder="例: 复习FVCOM"></div>
+    <div class="row2">
+      <div class="field"><label>开始</label><input type="time" id="dd-start" step="1800"></div>
+      <div class="field"><label>结束</label><input type="time" id="dd-end" step="1800"></div>
+    </div>
+    <div class="field" id="dd-status-field" style="display:none;">
+      <label>达成状况</label>
+      <div class="dow-pick" id="dd-status-pick"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveDDEntry()">保存</button>
+      <button class="btn btn-danger" id="dd-del" onclick="deleteDDEntry()" style="display:none;flex:0 0 auto;padding:10px 14px;">删除</button>
+      <button class="btn btn-ghost" onclick="closeModal('dd-modal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal" id="settings-modal" style="z-index:120;">
+  <div class="modal-card">
+    <h3>⚙️ 设置</h3>
+    <div class="field">
+      <label>Groq API 密钥（用于 AI 功能）</label>
+      <input id="set-groq" type="password" placeholder="gsk_...">
+    </div>
+    <div style="font-size:11px;color:var(--text3);line-height:1.6;margin-bottom:8px;">
+      可以复用就活Agent的密钥。<a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent);">console.groq.com/keys</a> 免费获取。密钥只保存在本设备，不会外传（除了调用 Groq AI 时）。
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+    <div class="field">
+      <label>🔗 就活Agent 联动</label>
+      <div style="font-size:11px;color:var(--text3);line-height:1.6;margin-bottom:8px;">
+        如果两个 app 部署在<b>同一个网址下</b>（如 /jikan），就活的面试/笔试会<b>自动</b>显示为死时间，无需导入。<br>
+        如果是分开的网址，可以在就活Agent导出备份(💾)，在这里手动导入一次：
+      </div>
+      <input type="file" id="shukatsu-file" accept=".json,application/json" onchange="importFromShukatsu(event)"
+        style="width:100%;font-size:12px;color:var(--text2);">
+      <div id="import-result" style="font-size:12px;margin-top:8px;"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveSettings()">保存</button>
+      <button class="btn btn-ghost" onclick="closeModal('settings-modal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI panel -->
+<div class="modal" id="ai-modal" style="z-index:120;">
+  <div class="modal-card" style="width:540px;">
+    <h3>✨ AI 助手</h3>
+    <div class="ai-tabs">
+      <button class="ai-tab sel" id="ait-review" onclick="setAITab('review')">📊 复盘</button>
+      <button class="ai-tab" id="ait-plan" onclick="setAITab('plan')">🗓️ 制定计划</button>
+      <button class="ai-tab" id="ait-check" onclick="setAITab('check')">⚖️ 现实性检查</button>
+    </div>
+    <!-- review tab -->
+    <div class="ai-pane" id="aip-review">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">AI 分析本周的「计划 vs 实绩」。</div>
+      <div class="row2">
+        <button class="btn btn-ghost" onclick="aiReview('week')">复盘本周</button>
+        <button class="btn btn-ghost" onclick="aiReview('month')">复盘本月</button>
+      </div>
+    </div>
+    <!-- plan tab -->
+    <div class="ai-pane" id="aip-plan" style="display:none;">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">写下想做的事/目标，AI 会把它们安排进空闲时间。</div>
+      <div class="field"><textarea id="ai-plan-input" rows="3" placeholder="例: 本周内复习FVCOM 6小时、写3份ES、练2次GD" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 11px;color:var(--text);font-family:var(--body);font-size:13px;outline:none;resize:vertical;"></textarea></div>
+      <button class="btn btn-primary" onclick="aiPlan()">安排进空闲时间</button>
+    </div>
+    <!-- check tab -->
+    <div class="ai-pane" id="aip-check" style="display:none;">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">对照空闲时间，检查本周计划是否现实。</div>
+      <button class="btn btn-primary" onclick="aiCheck()">检查本周计划</button>
+    </div>
+    <div id="ai-output" style="margin-top:16px;"></div>
+    <div class="btn-row"><button class="btn btn-ghost" onclick="closeModal('ai-modal')">关闭</button></div>
+  </div>
+</div>
+
+<!-- Day detail (plan vs actual) -->
+<div class="day-detail" id="day-detail">
+  <div class="dd-head">
+    <button class="icon-btn" onclick="closeDayDetail()">‹ 返回</button>
+    <span class="dd-title" id="dd-title"></span>
+    <div class="spacer"></div>
+    <button class="icon-btn" onclick="copyPlanToActual()" title="把计划复制到实绩栏，记录达成状况">📋 从计划生成实绩</button>
+    <span class="wk-label" id="dd-stat"></span>
+  </div>
+  <div class="dd-cols" id="dd-cols"></div>
+</div>
+
+<script>
+// ─── Config & State ───────────────────────────────────────
+const DAY_START = 7;   // 7:00
+const DAY_END = 24;    // 24:00
+const SLOT_MIN = 30;   // 30-minute slots
+const DOW = ['日','一','二','三','四','五','六'];
+
+let courses = JSON.parse(localStorage.getItem('jp_courses') || '[]'); // {id,name,day,start,end} weekly repeat
+let fixed   = JSON.parse(localStorage.getItem('jp_fixed')   || '[]'); // {id,name,date,start,end} one-time fixed
+let skips   = JSON.parse(localStorage.getItem('jp_skips')   || '[]'); // {courseId,date} skipped occurrences
+let todos   = JSON.parse(localStorage.getItem('jp_todos')   || '[]'); // {id,text,done,color}
+let plans   = JSON.parse(localStorage.getItem('jp_plans')   || '[]'); // {id,date,title,start,end,color}
+let actuals = JSON.parse(localStorage.getItem('jp_actuals') || '[]'); // {id,date,title,start,end,status}
+let weekOffset = 0;
+let viewMode = 'week'; // 'week' or 'month'
+let courseDow = 1; // selected day in course modal
+// returns courses active on a given date (respecting skips)
+function coursesOnDate(d) {
+  const date = ymd(d), dow = d.getDay();
+  return courses.filter(c => c.day===dow && !skips.some(s=>s.courseId===c.id && s.date===date));
+}
+function fixedOnDate(d) {
+  const date = ymd(d);
+  return fixed.filter(f => f.date===date);
+}
+// Same-origin link: read 就活Agent's events straight from its localStorage (key: shukatsu_events).
+// When both apps are served from the same domain, this makes interviews/tests show up
+// automatically as dead time — no manual export/import needed.
+function shukatsuEventsRaw(){
+  try { return JSON.parse(localStorage.getItem('shukatsu_events') || '[]'); }
+  catch(e){ return []; }
+}
+function shukatsuOnDate(d){
+  const date = ymd(d);
+  const out = [];
+  shukatsuEventsRaw().forEach(ev=>{
+    if (ev.status === 'done') return;
+    const f = shukatsuEventToFixed(ev); // {date,start,end,name,srcKey} or null (skips deadlines w/o time)
+    if (f && f.date===date) out.push({ ...f, name: '💼 '+f.name, kind:'shukatsu' });
+  });
+  return out;
+}
+function deadTimeOnDate(d) {
+  return [
+    ...coursesOnDate(d).map(c=>({...c, kind:'course'})),
+    ...fixedOnDate(d).map(f=>({...f, kind:'fixed'})),
+    ...shukatsuOnDate(d)
+  ];
+}
+
+function save(k, v) { localStorage.setItem('jp_'+k, JSON.stringify(v)); }
+function saveAll() { save('courses',courses); save('todos',todos); save('plans',plans); save('actuals',actuals); }
+
+// ─── Date helpers ─────────────────────────────────────────
+function mondayOf(offset) {
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  const dow = (d.getDay()+6)%7; // 0=Mon
+  d.setDate(d.getDate() - dow + offset*7);
+  return d;
+}
+function ymd(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function weekDays() {
+  const mon = mondayOf(weekOffset);
+  return Array.from({length:7}, (_,i) => { const d=new Date(mon); d.setDate(mon.getDate()+i); return d; });
+}
+// minutes since midnight -> slot index
+function timeToMin(t) { const [h,m]=t.split(':').map(Number); return h*60+m; }
+function minToTime(m) { return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
+const TOTAL_SLOTS = (DAY_END-DAY_START)*60/SLOT_MIN;
+
+// ─── Free-time calc ───────────────────────────────────────
+function busyMinutesForDate(d) {
+  const date = ymd(d);
+  let busy = 0;
+  deadTimeOnDate(d).forEach(c=> busy += timeToMin(c.end)-timeToMin(c.start));
+  plans.filter(p=>p.date===date).forEach(p=> busy += timeToMin(p.end)-timeToMin(p.start));
+  return busy;
+}
+function freeMinutesForDate(d) {
+  const total = (DAY_END-DAY_START)*60;
+  return Math.max(0, total - busyMinutesForDate(d));
+}
+function fmtHM(min) {
+  const h=Math.floor(min/60), m=min%60;
+  return m? `${h}h${m}m` : `${h}h`;
+}
+
+// ─── Render week ──────────────────────────────────────────
+function renderWeek() {
+  const days = weekDays();
+  const todayStr = ymd(new Date());
+  document.getElementById('wk-label').textContent =
+    `${ymd(days[0]).slice(5)} – ${ymd(days[6]).slice(5)}`;
+
+  let html = '<div class="time-gutter-head"></div>';
+  days.forEach(d => {
+    const isToday = ymd(d)===todayStr;
+    const free = freeMinutesForDate(d);
+    html += `<div class="col-head${isToday?' today':''}" onclick="openDayDetail('${ymd(d)}')">
+      <div class="dow">${DOW[d.getDay()]}</div>
+      <div class="dnum">${d.getDate()}</div>
+      <div class="free-mini">空 ${fmtHM(free)}</div>
+    </div>`;
+  });
+  // time rows
+  for (let s=0; s<TOTAL_SLOTS; s++) {
+    const min = DAY_START*60 + s*SLOT_MIN;
+    const isHour = min%60===0;
+    html += `<div class="time-label">${isHour?minToTime(min):''}</div>`;
+    days.forEach(d => {
+      const isToday = ymd(d)===todayStr;
+      html += `<div class="slot ${isHour?'hour':'half'}${isToday?' today-col':''}"
+        data-date="${ymd(d)}" data-min="${min}"
+        onclick="quickAddPlan('${ymd(d)}', ${min})"
+        ondragover="event.preventDefault()" ondrop="dropTodo(event,'${ymd(d)}',${min})"></div>`;
+    });
+  }
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML = html;
+
+  // overlay event blocks
+  days.forEach((d, di) => {
+    const date = ymd(d);
+    coursesOnDate(d).forEach(c=> placeBlock(di, c.start, c.end, c.name, 'ev-course', ()=>clickCourseBlock(c.id, date)));
+    fixedOnDate(d).forEach(f=> placeBlock(di, f.start, f.end, f.name, 'ev-course'));
+    shukatsuOnDate(d).forEach(s=> placeBlock(di, s.start, s.end, s.name, 'ev-shukatsu', ()=>alert('これは就活Agentの予定です。\n時間プランナーでは表示のみ（編集・削除はできません）。\n変更したい場合は就活Agent側で行ってください。')));
+    plans.filter(p=>p.date===date).forEach(p=> placeBlock(di, p.start, p.end, p.title, 'ev-plan', ()=>openPlanEdit(p.id), p.id, p.color));
+  });
+
+  // week free-time banner
+  let weekFree=0, weekBusy=0;
+  days.forEach(d=>{ weekFree+=freeMinutesForDate(d); weekBusy+=busyMinutesForDate(d); });
+  document.getElementById('freebar').innerHTML = `
+    <div class="stat"><span class="num">${fmtHM(weekFree)}</span><span class="lbl">本周空闲</span></div>
+    <div class="stat"><span class="num">${fmtHM(weekBusy)}</span><span class="lbl">已排</span></div>`;
+}
+function placeBlock(dayIndex, start, end, title, cls, onclick, dragId, color) {
+  const grid = document.getElementById('week-grid');
+  const startMin = timeToMin(start), endMin = timeToMin(end);
+  const top = (startMin - DAY_START*60)/SLOT_MIN;
+  const height = (endMin-startMin)/SLOT_MIN;
+  if (top<0 || top>=TOTAL_SLOTS) return;
+  const slots = grid.querySelectorAll('.slot');
+  const idx = Math.round(top)*7 + dayIndex;
+  const cell = slots[idx];
+  if (!cell) return;
+  const block = document.createElement('div');
+  block.className = `ev-block ${cls}`;
+  if (color) block.style.background = color;
+  block.style.top = '0px';
+  block.style.height = (height*24 - 3)+'px';
+  const durMin = endMin - startMin;
+  const durStr = durMin>=60 ? `${Math.floor(durMin/60)}h${durMin%60?durMin%60+'m':''}` : `${durMin}m`;
+  block.innerHTML = `<div class="et">${title}</div><div class="etime">${start}–${end} · ${durStr}</div>`;
+  if (dragId != null) {
+    block.style.cursor = 'grab';
+    block.onmousedown = (e)=> startBlockDrag(e, dragId, 'move');
+    const handle = document.createElement('div');
+    handle.className = 'resize-handle';
+    handle.onmousedown = (e)=> startBlockDrag(e, dragId, 'resize');
+    block.appendChild(handle);
+  } else if (onclick) {
+    block.onclick = (e)=>{ e.stopPropagation(); onclick(); };
+  }
+  cell.appendChild(block);
+}
+
+// ── Pointer-based drag & resize (real-time, snaps to 30-min) ──
+let dragState = null;
+function startBlockDrag(e, planId, mode) {
+  e.preventDefault(); e.stopPropagation();
+  const p = plans.find(p=>p.id===planId);
+  if (!p) return;
+  dragState = {
+    planId, mode, startX: e.clientX, startY: e.clientY,
+    origStart: timeToMin(p.start), origEnd: timeToMin(p.end), moved: false
+  };
+  document.body.classList.add('dragging-active');
+  document.addEventListener('mousemove', onBlockDragMove);
+  document.addEventListener('mouseup', onBlockDragEnd);
+}
+function onBlockDragMove(e) {
+  if (!dragState) return;
+  const dx = e.clientX - dragState.startX, dy = e.clientY - dragState.startY;
+  if (!dragState.moved && Math.abs(dx)<4 && Math.abs(dy)<4) return;
+  dragState.moved = true;
+  const p = plans.find(p=>p.id===dragState.planId);
+  if (!p) return;
+  if (dragState.mode === 'resize') {
+    const deltaSlots = Math.round(dy/24);
+    let newEnd = dragState.origEnd + deltaSlots*SLOT_MIN;
+    newEnd = Math.max(dragState.origStart+SLOT_MIN, Math.min(newEnd, DAY_END*60));
+    if (minToTime(newEnd)!==p.end) { p.end = minToTime(newEnd); save('plans',plans); renderWeek(); }
+  } else {
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const slot = under && under.closest && under.closest('.slot');
+    if (slot && slot.dataset.date) {
+      const date = slot.dataset.date, min = parseInt(slot.dataset.min);
+      const dur = dragState.origEnd - dragState.origStart;
+      if (p.date!==date || timeToMin(p.start)!==min) {
+        p.date = date; p.start = minToTime(min); p.end = minToTime(Math.min(min+dur, DAY_END*60));
+        save('plans',plans); renderWeek();
+      }
+    }
+  }
+}
+function onBlockDragEnd() {
+  document.removeEventListener('mousemove', onBlockDragMove);
+  document.removeEventListener('mouseup', onBlockDragEnd);
+  document.body.classList.remove('dragging-active');
+  const moved = dragState && dragState.moved;
+  const id = dragState ? dragState.planId : null;
+  const mode = dragState ? dragState.mode : null;
+  dragState = null;
+  if (!moved && id && mode==='move') openPlanEdit(id); // tap without drag = edit
+}
+
+// ─── Todos ────────────────────────────────────────────────
+const TODO_COLORS = ['#0ea5e9','#8b5cf6','#10b981','#f59e0b','#ec4899','#ef4444','#14b8a6','#6366f1'];
+function renderTodos() {
+  const list = document.getElementById('todo-list');
+  const active = todos.filter(t=>!t.done);
+  if (!active.length) { list.innerHTML = `<div class="empty-hint">添加任务后，<br>拖到日历上</div>`; return; }
+  list.innerHTML = todos.map(t => `
+    <div class="todo ${t.done?'completed':''}" draggable="true"
+      ondragstart="dragTodo(event,${t.id})" ondragend="this.classList.remove('dragging')">
+      <span class="todo-dot" style="background:${t.color||TODO_COLORS[0]}" onclick="event.stopPropagation();cycleTodoColor(${t.id})" title="色を変更"></span>
+      <span class="ttext" onclick="toggleTodo(${t.id})">${t.text}</span>
+      <span class="done-x" onclick="event.stopPropagation();deleteTodo(${t.id})" style="margin-left:auto;">✕</span>
+    </div>`).join('');
+}
+function addTodo() {
+  const inp = document.getElementById('todo-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  const color = TODO_COLORS[todos.length % TODO_COLORS.length];
+  todos.push({ id: Date.now(), text, done: false, color });
+  inp.value=''; save('todos',todos); renderTodos();
+}
+function cycleTodoColor(id) {
+  const t = todos.find(t=>t.id===id);
+  if (!t) return;
+  const i = TODO_COLORS.indexOf(t.color || TODO_COLORS[0]);
+  t.color = TODO_COLORS[(i+1) % TODO_COLORS.length];
+  save('todos',todos); renderTodos(); render();
+}
+function toggleTodo(id) { const t=todos.find(t=>t.id===id); if(t){t.done=!t.done; save('todos',todos); renderTodos();} }
+function deleteTodo(id) { todos=todos.filter(t=>t.id!==id); save('todos',todos); renderTodos(); }
+
+let draggedTodoId = null;
+let draggedPlanId = null;
+let dragType = null;
+function dragTodo(e, id) { dragType='todo'; draggedTodoId = id; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
+function dropTodo(e, date, min) {
+  e.preventDefault();
+  if (dragType==='plan' && draggedPlanId!=null) {
+    // move an existing plan block, keeping its duration
+    const p = plans.find(p=>p.id===draggedPlanId);
+    if (p) {
+      const dur = timeToMin(p.end)-timeToMin(p.start);
+      p.date = date; p.start = minToTime(min); p.end = minToTime(Math.min(min+dur, DAY_END*60));
+      save('plans',plans); renderWeek();
+    }
+  } else if (dragType==='todo' && draggedTodoId!=null) {
+    const t = todos.find(t=>t.id===draggedTodoId);
+    if (t) { plans.push({ id: Date.now(), date, title: t.text, start: minToTime(min), end: minToTime(min+60), color: t.color || TODO_COLORS[0] }); save('plans',plans); renderWeek(); }
+  }
+  dragType=null; draggedTodoId=null; draggedPlanId=null;
+}
+
+// ─── Plan events ──────────────────────────────────────────
+let editingPlanId = null;
+function quickAddPlan(date, min) {
+  editingPlanId = null;
+  document.getElementById('event-modal-title').textContent = '添加计划';
+  document.getElementById('ev-title').value = '';
+  document.getElementById('ev-start').value = minToTime(min);
+  document.getElementById('ev-end').value = minToTime(min+60);
+  document.getElementById('ev-delete').style.display='none';
+  openModal('event-modal');
+  setTimeout(()=>document.getElementById('ev-title').focus(), 50);
+}
+function openPlanEdit(id) {
+  const p = plans.find(p=>p.id===id);
+  if (!p) return;
+  editingPlanId = id;
+  document.getElementById('event-modal-title').textContent = '编辑计划';
+  document.getElementById('ev-title').value = p.title;
+  document.getElementById('ev-start').value = p.start;
+  document.getElementById('ev-end').value = p.end;
+  document.getElementById('ev-delete').style.display='block';
+  openModal('event-modal');
+}
+function savePlanEvent() {
+  const title = document.getElementById('ev-title').value.trim();
+  const start = document.getElementById('ev-start').value;
+  const end = document.getElementById('ev-end').value;
+  if (!title || !start || !end) return;
+  if (editingPlanId) {
+    const p = plans.find(p=>p.id===editingPlanId);
+    Object.assign(p, { title, start, end });
+  } else {
+    plans.push({ id: Date.now(), date: pendingDate, title, start, end });
+  }
+  save('plans',plans); closeModal('event-modal'); render();
+}
+let pendingDate = null;
+const _origQuickAdd = quickAddPlan;
+quickAddPlan = function(date, min){ pendingDate = date; _origQuickAdd(date, min); };
+function deletePlanEvent() {
+  if (!editingPlanId) return;
+  plans = plans.filter(p=>p.id!==editingPlanId);
+  save('plans',plans); closeModal('event-modal'); render();
+}
+
+// ─── Courses ──────────────────────────────────────────────
+let courseType = 'course';
+function openCourseModal() {
+  courseType='course'; setCourseType('course');
+  document.getElementById('c-date').value = ymd(new Date());
+  renderDowPick(); renderCourseList(); openModal('course-modal');
+}
+function setCourseType(t) {
+  courseType = t;
+  document.getElementById('ct-course').className = t==='course'?'sel':'';
+  document.getElementById('ct-fixed').className = t==='fixed'?'sel':'';
+  document.getElementById('c-dow-field').style.display = t==='course'?'block':'none';
+  document.getElementById('c-date-field').style.display = t==='fixed'?'block':'none';
+}
+function renderDowPick() {
+  const wrap = document.getElementById('c-dow');
+  wrap.innerHTML = [1,2,3,4,5,6,0].map(d =>
+    `<button class="${d===courseDow?'sel':''}" onclick="courseDow=${d};renderDowPick()">${DOW[d]}</button>`).join('');
+}
+function saveCourse() {
+  const name = document.getElementById('c-name').value.trim();
+  const start = document.getElementById('c-start').value;
+  const end = document.getElementById('c-end').value;
+  if (!name || !start || !end) return;
+  if (courseType==='course') {
+    courses.push({ id: Date.now(), name, day: courseDow, start, end });
+    save('courses',courses);
+  } else {
+    const date = document.getElementById('c-date').value;
+    if (!date) return;
+    fixed.push({ id: Date.now(), name, date, start, end });
+    save('fixed',fixed);
+  }
+  document.getElementById('c-name').value='';
+  renderCourseList(); render();
+}
+function renderCourseList() {
+  const wrap = document.getElementById('course-list');
+  let html = '';
+  if (courses.length) {
+    html += `<div style="font-size:11px;color:var(--text3);margin:4px 0;">📚 每周的课</div>`;
+    const sorted = courses.slice().sort((a,b)=> a.day-b.day || a.start.localeCompare(b.start));
+    html += sorted.map(c => `
+      <div class="todo" style="cursor:default;">
+        <span style="color:var(--course);font-weight:600;">${DOW[c.day]}</span>
+        <span class="ttext">${c.name}</span>
+        <span class="est">${c.start}–${c.end}</span>
+        <span class="done-x" onclick="deleteCourse(${c.id})">✕</span>
+      </div>`).join('');
+  }
+  if (fixed.length) {
+    html += `<div style="font-size:11px;color:var(--text3);margin:8px 0 4px;">📌 单次固定预定</div>`;
+    const sorted = fixed.slice().sort((a,b)=> a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+    html += sorted.map(f => `
+      <div class="todo" style="cursor:default;">
+        <span style="color:var(--course);font-weight:600;font-size:11px;">${f.date.slice(5)}</span>
+        <span class="ttext">${f.name}</span>
+        <span class="est">${f.start}–${f.end}</span>
+        <span class="done-x" onclick="deleteFixed(${f.id})">✕</span>
+      </div>`).join('');
+  }
+  if (!html) html = `<div class="empty-hint">还没有固定预定</div>`;
+  wrap.innerHTML = html;
+}
+function deleteCourse(id) {
+  if (!confirm('删除这门课的所有周次吗？（如果只想停某一周的课，请在日历上点那周的课程块）')) return;
+  courses=courses.filter(c=>c.id!==id);
+  skips=skips.filter(s=>s.courseId!==id);
+  save('courses',courses); save('skips',skips); renderCourseList(); render();
+}
+function deleteFixed(id) { fixed=fixed.filter(f=>f.id!==id); save('fixed',fixed); renderCourseList(); render(); }
+// click a course block on a specific day -> option to skip just that week
+function clickCourseBlock(courseId, date) {
+  const c = courses.find(c=>c.id===courseId);
+  if (!c) return;
+  if (confirm(`${date.slice(5)} の「${c.name}」停课吗？（只删这一周，其他周保留）`)) {
+    skips.push({ courseId, date });
+    save('skips',skips); render();
+  }
+}
+
+// ─── Day detail (plan vs actual) ──────────────────────────
+let detailDate = null;
+function openDayDetail(date) {
+  detailDate = date;
+  const d = new Date(date+'T00:00:00');
+  document.getElementById('dd-title').textContent = `${date.slice(5)} (${DOW[d.getDay()]})  计划 vs 实绩`;
+  renderDayDetail();
+  document.getElementById('day-detail').classList.add('open');
+}
+function closeDayDetail() { document.getElementById('day-detail').classList.remove('open'); render(); }
+function renderDayDetail() {
+  const d = new Date(detailDate+'T00:00:00');
+  const dow = d.getDay();
+  let html = '<div class="dd-colhead"></div><div class="dd-colhead plan">计划</div><div class="dd-colhead actual">实绩</div>';
+  for (let s=0;s<TOTAL_SLOTS;s++){
+    const min = DAY_START*60 + s*SLOT_MIN;
+    const isHour = min%60===0;
+    html += `<div class="dd-tlabel">${isHour?minToTime(min):''}</div>`;
+    html += `<div class="dd-slot ${isHour?'hour':''}" onclick="quickAddPlanDetail(${min})"></div>`;
+    html += `<div class="dd-slot ${isHour?'hour':''}" onclick="quickAddActual(${min})"></div>`;
+  }
+  const cols = document.getElementById('dd-cols');
+  cols.innerHTML = html;
+  // place plan blocks (col 2) and course (also as plan, fixed)
+  const ddSlots = cols.querySelectorAll('.dd-slot');
+  const placeDD = (colOffset, start, end, title, cls, onclick) => {
+    const startMin=timeToMin(start), endMin=timeToMin(end);
+    const top=Math.round((startMin-DAY_START*60)/SLOT_MIN);
+    const height=(endMin-startMin)/SLOT_MIN;
+    if(top<0||top>=TOTAL_SLOTS) return;
+    const cell = ddSlots[top*2+colOffset];
+    if(!cell) return;
+    const b=document.createElement('div');
+    b.className=`ev-block ${cls}`; b.style.top='0px'; b.style.height=(height*28-3)+'px';
+    b.innerHTML=`<div class="et">${title}</div><div class="etime">${start}–${end}</div>`;
+    if(onclick) b.onclick=(e)=>{e.stopPropagation();onclick();};
+    cell.appendChild(b);
+  };
+  const dd = new Date(detailDate+'T00:00:00');
+  const dead = deadTimeOnDate(dd);
+  // dead time (courses + fixed) — auto-shown in BOTH columns, not editable
+  dead.forEach(c=> placeDD(0, c.start,c.end,c.name, c.kind==='shukatsu'?'ev-shukatsu':'ev-course'));
+  dead.forEach(c=> placeDD(1, c.start,c.end,c.name, c.kind==='shukatsu'?'ev-shukatsu':'ev-course'));
+  plans.filter(p=>p.date===detailDate).forEach(p=> placeDD(0, p.start,p.end,p.title,'ev-plan', ()=>openDDModal('plan', p.id)));
+  actuals.filter(a=>a.date===detailDate).forEach(a=> placeDD(1, a.start,a.end,a.title, a.status==='done'?'ev-done':a.status==='miss'?'ev-miss':'ev-plan', ()=>openDDModal('actual', a.id)));
+  // stats — only count self-allocated time (plans/actuals), courses are dead time excluded
+  const planMin = plans.filter(p=>p.date===detailDate).reduce((s,p)=>s+timeToMin(p.end)-timeToMin(p.start),0);
+  const doneMin = actuals.filter(a=>a.date===detailDate && a.status==='done').reduce((s,a)=>s+timeToMin(a.end)-timeToMin(a.start),0);
+  const rate = planMin? Math.round(doneMin/planMin*100):0;
+  document.getElementById('dd-stat').textContent = `我的计划 ${fmtHM(planMin)} / 达成 ${fmtHM(doneMin)} (${rate}%)`;
+}
+let ddMode = 'plan';      // 'plan' or 'actual'
+let ddEditId = null;
+let ddStatus = 'done';
+function quickAddPlanDetail(min) { openDDModal('plan', null, min); }
+function quickAddActual(min) { openDDModal('actual', null, min); }
+function openDDModal(mode, editId, min) {
+  ddMode = mode; ddEditId = editId;
+  document.getElementById('dd-modal-title').textContent =
+    (editId?'编辑 — ':'添加 — ') + (mode==='plan'?'计划':'实绩');
+  const statusField = document.getElementById('dd-status-field');
+  statusField.style.display = mode==='actual' ? 'block' : 'none';
+  const delBtn = document.getElementById('dd-del');
+  if (editId) {
+    const arr = mode==='plan'?plans:actuals;
+    const item = arr.find(x=>x.id===editId);
+    document.getElementById('dd-title').value = item.title;
+    document.getElementById('dd-start').value = item.start;
+    document.getElementById('dd-end').value = item.end;
+    ddStatus = item.status || 'done';
+    delBtn.style.display = 'block';
+  } else {
+    document.getElementById('dd-title').value = '';
+    document.getElementById('dd-start').value = minToTime(min);
+    document.getElementById('dd-end').value = minToTime(min+60);
+    ddStatus = 'done';
+    delBtn.style.display = 'none';
+  }
+  if (mode==='actual') renderDDStatusPick();
+  openModal('dd-modal');
+  setTimeout(()=>document.getElementById('dd-title').focus(), 50);
+}
+function renderDDStatusPick() {
+  const opts = [['done','✅ 完成'],['miss','❌ 没做到'],['partial','🔸 部分完成']];
+  document.getElementById('dd-status-pick').innerHTML = opts.map(([v,l])=>
+    `<button class="${v===ddStatus?'sel':''}" onclick="ddStatus='${v}';renderDDStatusPick()">${l}</button>`).join('');
+}
+function saveDDEntry() {
+  const title = document.getElementById('dd-title').value.trim();
+  const start = document.getElementById('dd-start').value;
+  const end = document.getElementById('dd-end').value;
+  if (!title || !start || !end) return;
+  if (ddMode==='plan') {
+    if (ddEditId) { Object.assign(plans.find(p=>p.id===ddEditId), {title,start,end}); }
+    else plans.push({ id:Date.now(), date:detailDate, title, start, end });
+    save('plans',plans);
+  } else {
+    if (ddEditId) { Object.assign(actuals.find(a=>a.id===ddEditId), {title,start,end,status:ddStatus}); }
+    else actuals.push({ id:Date.now(), date:detailDate, title, start, end, status:ddStatus });
+    save('actuals',actuals);
+  }
+  closeModal('dd-modal'); renderDayDetail();
+}
+function deleteDDEntry() {
+  if (!ddEditId) return;
+  if (ddMode==='plan') { plans=plans.filter(p=>p.id!==ddEditId); save('plans',plans); }
+  else { actuals=actuals.filter(a=>a.id!==ddEditId); save('actuals',actuals); }
+  closeModal('dd-modal'); renderDayDetail();
+}
+function copyPlanToActual() {
+  const dayPlans = plans.filter(p=>p.date===detailDate);
+  if (!dayPlans.length) { alert('没有可复制的计划。请先制定自己的计划。'); return; }
+  const existing = new Set(actuals.filter(a=>a.date===detailDate).map(a=>a.title+a.start));
+  let added=0;
+  dayPlans.forEach(p=>{
+    if (existing.has(p.title+p.start)) return;
+    actuals.push({ id:Date.now()+Math.floor(Math.random()*100000), date:detailDate, title:p.title, start:p.start, end:p.end, status:'done' });
+    added++;
+  });
+  save('actuals',actuals); renderDayDetail();
+  if (added) alert(`${added}项计划已复制到实绩。没做到的切成红色、部分完成的切成黄色（点实绩块切换）。`);
+  else alert('所有计划都已记录到实绩了。');
+}
+
+// ─── Modal / theme utils ──────────────────────────────────
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+let monthOffset = 0; // months from current, for month view
+function render() { if (viewMode==='week') renderWeek(); else renderMonth(); }
+function changeWeek(dir){
+  if (viewMode==='month') { monthOffset = dir===0?0:monthOffset+dir; renderMonth(); }
+  else { weekOffset = dir===0?0:weekOffset+dir; renderWeek(); }
+}
+function setViewMode(mode){
+  viewMode = mode;
+  document.getElementById('vm-week').classList.toggle('vm-sel', mode==='week');
+  document.getElementById('vm-month').classList.toggle('vm-sel', mode==='month');
+  document.getElementById('week-grid').style.display = mode==='week'?'':'none';
+  document.getElementById('month-grid').style.display = mode==='month'?'grid':'none';
+  document.getElementById('today-btn').textContent = mode==='month'?'本月':'本周';
+  render();
+}
+function renderMonth(){
+  const base = new Date();
+  base.setDate(1);
+  base.setMonth(base.getMonth()+monthOffset);
+  const year = base.getFullYear(), month = base.getMonth();
+  document.getElementById('wk-label').textContent = `${year}年${month+1}月`;
+  // grid starts on Monday of the week containing the 1st
+  const first = new Date(year, month, 1);
+  const startDow = (first.getDay()+6)%7; // 0=Mon
+  const gridStart = new Date(first); gridStart.setDate(1 - startDow);
+  const todayStr = ymd(new Date());
+  let html = ['一','二','三','四','五','六','日'].map(d=>`<div class="m-dow">${d}</div>`).join('');
+  for (let i=0;i<42;i++){
+    const d = new Date(gridStart); d.setDate(gridStart.getDate()+i);
+    const date = ymd(d);
+    const other = d.getMonth()!==month;
+    const isToday = date===todayStr;
+    const free = freeMinutesForDate(d);
+    const dayPlans = plans.filter(p=>p.date===date);
+    const dead = deadTimeOnDate(d);
+    let bars = '';
+    const items = [...dead.map(x=>({color:'var(--course)'})), ...dayPlans.map(p=>({color:p.color||'var(--plan)'}))];
+    items.slice(0,4).forEach(it=> bars += `<div class="m-bar" style="background:${it.color}"></div>`);
+    const more = items.length>4 ? `<div class="m-more">+${items.length-4}</div>` : '';
+    html += `<div class="m-cell${other?' other':''}${isToday?' today':''}" onclick="openDayDetail('${date}')">
+      <div class="m-date">${d.getDate()}</div>
+      ${!other?`<div class="m-free">空 ${fmtHM(free)}</div>`:''}
+      <div class="m-bars">${bars}${more}</div>
+    </div>`;
+    // stop after we've covered the month (5 or 6 rows)
+    if (i>=34 && d.getMonth()!==month && (i+1)%7===0) break;
+  }
+  document.getElementById('month-grid').innerHTML = html;
+}
+function applyTheme(t){ if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); else document.documentElement.removeAttribute('data-theme'); const b=document.getElementById('theme-btn'); if(b) b.textContent = t==='dark'?'☀️':'🌙'; }
+function toggleTheme(){ const cur=localStorage.getItem('jp_theme')||'light'; const next=cur==='light'?'dark':'light'; localStorage.setItem('jp_theme',next); applyTheme(next); }
+function toggleSidebar(){ document.querySelector('.sidebar').classList.toggle('hidden'); }
+
+// ─── Settings (Groq key) ──────────────────────────────────
+let settings = JSON.parse(localStorage.getItem('jp_settings') || '{}');
+function openSettings(){ document.getElementById('set-groq').value = settings.groqKey || ''; openModal('settings-modal'); }
+function saveSettings(){
+  settings.groqKey = document.getElementById('set-groq').value.trim();
+  localStorage.setItem('jp_settings', JSON.stringify(settings));
+  closeModal('settings-modal');
+}
+// Convert one shukatsu event into a fixed dead-time entry, or null if it has no concrete time slot
+function shukatsuEventToFixed(ev){
+  if (!ev || !ev.datetime) return null;
+  const date = ev.datetime.slice(0,10);
+  const start = ev.datetime.slice(11,16);
+  if (!start || start==='00:00') return null; // no concrete start time -> skip (it's a deadline, not a time slot)
+  let end;
+  if (ev.datetimeEnd && ev.datetimeEnd.slice(0,10)===date) {
+    end = ev.datetimeEnd.slice(11,16); // same-day end time
+  } else {
+    const [h,m] = start.split(':').map(Number); // default 1 hour
+    end = String((h+1)%24).padStart(2,'0')+':'+String(m||0).padStart(2,'0');
+  }
+  if (end<=start) { const [h,m]=start.split(':').map(Number); end=String((h+1)%24).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
+  const name = `${ev.company||''} ${ev.type||'予定'}`.trim();
+  return { date, start, end, name, srcKey: 'shukatsu:'+(ev.company||'')+ev.datetime };
+}
+function importFromShukatsu(e){
+  const file = e.target.files[0];
+  if (!file) return;
+  const result = document.getElementById('import-result');
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const evs = data.events || (Array.isArray(data) ? data : []);
+      if (!evs.length) { result.innerHTML = '<span style="color:var(--miss);">イベントが見つかりませんでした。就活Agentのバックアップファイルか確認してください。</span>'; return; }
+      const existingKeys = new Set(fixed.filter(f=>f.srcKey).map(f=>f.srcKey));
+      let added=0, skipped=0, noTime=0;
+      evs.forEach(ev=>{
+        const f = shukatsuEventToFixed(ev);
+        if (!f) { noTime++; return; }
+        if (existingKeys.has(f.srcKey)) { skipped++; return; }
+        fixed.push({ id: Date.now()+Math.floor(Math.random()*100000), name:f.name, date:f.date, start:f.start, end:f.end, srcKey:f.srcKey });
+        existingKeys.add(f.srcKey);
+        added++;
+      });
+      save('fixed', fixed); render();
+      result.innerHTML = `<span style="color:var(--done);">✅ ${added}件の予定を取り込みました${skipped?`（${skipped}件は既に取込済み）`:''}。${noTime?`<br><span style="color:var(--text3);">${noTime}件は時間帯がないためスキップ（締切のみの予定など）。</span>`:''}</span>`;
+      document.getElementById('shukatsu-file').value='';
+    } catch(err) {
+      result.innerHTML = `<span style="color:var(--miss);">読み込みエラー: ${err.message}</span>`;
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ─── AI panel ─────────────────────────────────────────────
+function openAIPanel(){
+  if (!settings.groqKey) { alert('请先在 ⚙️ 设置里填入 Groq API 密钥。'); openSettings(); return; }
+  document.getElementById('ai-output').innerHTML = '';
+  openModal('ai-modal');
+}
+function setAITab(tab){
+  ['review','plan','check'].forEach(t=>{
+    document.getElementById('ait-'+t).classList.toggle('sel', t===tab);
+    document.getElementById('aip-'+t).style.display = t===tab?'block':'none';
+  });
+  document.getElementById('ai-output').innerHTML = '';
+}
+function aiLoading(msg){ document.getElementById('ai-output').innerHTML = `<div class="ai-loading"><span class="ai-spin"></span>${msg}</div>`; }
+
+async function callGroq(messages, jsonMode){
+  const body = {
+    model: 'llama-3.3-70b-versatile',
+    messages,
+    temperature: 0.4,
+    max_tokens: 2000
+  };
+  if (jsonMode) body.response_format = { type: 'json_object' };
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+settings.groqKey },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) { const t=await res.text(); throw new Error('Groq API: '+res.status+' '+t.slice(0,200)); }
+  const data = await res.json();
+  return data.choices[0].message.content;
+}
+
+// Gather a date range's data as a compact text summary for the AI
+function rangeData(mode){
+  let days;
+  if (mode==='month') {
+    const base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+monthOffset);
+    const y=base.getFullYear(), m=base.getMonth(), last=new Date(y,m+1,0).getDate();
+    days=Array.from({length:last},(_,i)=>new Date(y,m,i+1));
+  } else {
+    days=weekDays();
+  }
+  const lines=[];
+  days.forEach(d=>{
+    const date=ymd(d);
+    const dead=deadTimeOnDate(d);
+    const dayPlans=plans.filter(p=>p.date===date);
+    const dayActs=actuals.filter(a=>a.date===date);
+    if(!dead.length && !dayPlans.length && !dayActs.length) return;
+    let l=`${date}(${DOW[d.getDay()]}) 空闲${fmtHM(freeMinutesForDate(d))}`;
+    if(dead.length) l+=` | 固定:${dead.map(c=>c.name+c.start+'-'+c.end).join(',')}`;
+    if(dayPlans.length) l+=` | 计划:${dayPlans.map(p=>p.title+p.start+'-'+p.end).join(',')}`;
+    if(dayActs.length) l+=` | 实绩:${dayActs.map(a=>a.title+a.start+'-'+a.end+'['+(a.status==='done'?'完成':a.status==='miss'?'未达':'部分')+']').join(',')}`;
+    lines.push(l);
+  });
+  return lines.join('\n') || '（无数据）';
+}
+
+async function aiReview(mode){
+  aiLoading(mode==='month'?'正在分析本月…':'正在分析本周…');
+  try {
+    const data = rangeData(mode);
+    const sys = '你是一个时间管理教练。用户是东京大学的研究生，正在求职。基于他的「计划vs实绩」数据，给出务实、温和但诚实的复盘。重点：1)可支配时间的利用率 2)哪类任务反复完不成 3)计划与实际的差距在哪 4)下周3条具体建议。注意：固定時間(课/固定预定)是死时间不计入评价，只看他自己安排的计划和实绩。必须用简体中文回答（即使数据里有日文也用中文），简洁，多用具体数字。用Markdown：## 小标题、- 列表。';
+    const out = await callGroq([
+      {role:'system', content:sys},
+      {role:'user', content:`期間: ${mode==='month'?'本月':'本周'}\n\nデータ:\n${data}`}
+    ]);
+    renderAIOutput(out);
+  } catch(e){ document.getElementById('ai-output').innerHTML = `<div style="color:var(--miss);font-size:12px;">错误: ${e.message}</div>`; }
+}
+
+async function aiCheck(){
+  aiLoading('正在检查计划的现实性…');
+  try {
+    const data = rangeData('week');
+    const days = weekDays();
+    const summary = days.map(d=>`${ymd(d).slice(5)}(${DOW[d.getDay()]}): 空闲${fmtHM(freeMinutesForDate(d))} / 已排${fmtHM(plans.filter(p=>p.date===ymd(d)).reduce((s,p)=>s+timeToMin(p.end)-timeToMin(p.start),0))}`).join('\n');
+    const sys = '你是时间管理教练。检查用户这周的计划是否现实。对每天比较「空闲时间」和「已排时间」，指出哪天计划过载(计划>空闲)、哪天还有余裕。诚实但不打击。用户有过度计划导致burnout的倾向，温和提醒留白的重要性。必须用简体中文回答（即使数据里有日文也用中文），Markdown格式，简洁，多用数字。';
+    const out = await callGroq([
+      {role:'system', content:sys},
+      {role:'user', content:`本周空闲時間 vs 计划:\n${summary}\n\n詳細:\n${data}`}
+    ]);
+    renderAIOutput(out);
+  } catch(e){ document.getElementById('ai-output').innerHTML = `<div style="color:var(--miss);font-size:12px;">错误: ${e.message}</div>`; }
+}
+
+async function aiPlan(){
+  const goal = document.getElementById('ai-plan-input').value.trim();
+  if (!goal) { alert('请输入想做的事。'); return; }
+  aiLoading('正在把计划安排进空闲时间…');
+  try {
+    const days = weekDays();
+    // build availability: free slots per day (excluding dead time and existing plans)
+    const avail = days.map(d=>{
+      const date=ymd(d);
+      const busy=[...deadTimeOnDate(d), ...plans.filter(p=>p.date===date)]
+        .map(x=>`${x.start}-${x.end}`).join(',');
+      return `${date}(${DOW[d.getDay()]}): 空闲${fmtHM(freeMinutesForDate(d))}, 已有安排[${busy||'无'}]`;
+    }).join('\n');
+    const sys = `你是时间规划助手。根据用户的目标，把任务安排进本周的空闲時間，避开固定时间和已有计划。时间范围${DAY_START}:00-${DAY_END}:00，按30分钟对齐。输出严格的JSON: {"plans":[{"date":"YYYY-MM-DD","title":"任务名","start":"HH:MM","end":"HH:MM"}]}。不要排进已占用时段，单块建议1-2小时，合理分散。只输出JSON。`;
+    const out = await callGroq([
+      {role:'system', content:sys},
+      {role:'user', content:`目标:\n${goal}\n\n本周空闲状况:\n${avail}`}
+    ], true);
+    let parsed;
+    try { parsed = JSON.parse(out); } catch(e){ throw new Error('无法解析 AI 的返回结果'); }
+    const newPlans = (parsed.plans||[]).filter(p=>p.date&&p.title&&p.start&&p.end);
+    if (!newPlans.length) { document.getElementById('ai-output').innerHTML='<div style="font-size:12px;color:var(--text2);">没有可安排的计划。'; return; }
+    // preview + confirm
+    const colors=TODO_COLORS;
+    document.getElementById('ai-output').innerHTML = `
+      <h4>建议的计划 (${newPlans.length}项)</h4>
+      <div style="max-height:200px;overflow-y:auto;">${newPlans.map((p,i)=>`<div style="padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;"><span style="color:var(--accent);font-family:var(--mono);">${p.date.slice(5)} ${p.start}-${p.end}</span> ${p.title}</div>`).join('')}</div>
+      <div class="btn-row"><button class="btn btn-primary" onclick='applyAIPlans(${JSON.stringify(newPlans).replace(/'/g,"&#39;")})'>添加到日历</button></div>`;
+  } catch(e){ document.getElementById('ai-output').innerHTML = `<div style="color:var(--miss);font-size:12px;">错误: ${e.message}</div>`; }
+}
+function applyAIPlans(newPlans){
+  newPlans.forEach((p,i)=>{
+    plans.push({ id:Date.now()+i, date:p.date, title:p.title, start:p.start, end:p.end, color:TODO_COLORS[i%TODO_COLORS.length] });
+  });
+  save('plans',plans);
+  closeModal('ai-modal');
+  setViewMode('week'); render();
+  alert(`${newPlans.length}项计划已添加。可以拖动微调。`);
+}
+
+// minimal markdown -> html for AI output
+function renderAIOutput(md){
+  let h = md
+    .replace(/^### (.*)$/gm,'<h4>$1</h4>')
+    .replace(/^## (.*)$/gm,'<h4>$1</h4>')
+    .replace(/^\* (.*)$/gm,'<li>$1</li>')
+    .replace(/^- (.*)$/gm,'<li>$1</li>')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/(<li>.*<\/li>)/gs, m=>'<ul>'+m+'</ul>')
+    .replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
+  h = h.replace(/<\/ul><br><br><ul>/g,'').replace(/<\/ul><br><ul>/g,'');
+  document.getElementById('ai-output').innerHTML = h;
+}
+
+// ─── Init ─────────────────────────────────────────────────
+applyTheme(localStorage.getItem('jp_theme')||'light');
+if (window.innerWidth <= 700) document.querySelector('.sidebar').classList.add('hidden');
+renderWeek();
+renderTodos();
+console.log('时间规划 app loaded');
+</script>
+
+<script>
+if ('serviceWorker' in navigator) { window.addEventListener('load',()=>navigator.serviceWorker.register('/jikan-sw.js').catch(()=>{})); }
+</script>
+</body>
+</html>
