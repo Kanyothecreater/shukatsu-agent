@@ -150,6 +150,7 @@
   body.dragging-active .ev-block { pointer-events: none; }
   body.dragging-active .slot:hover { background: var(--accent-soft); }
   .ev-block .etime { font-family: var(--mono); font-size: 9px; opacity: 0.85; }
+  .ev-block .enote { font-size: 10px; opacity: 0.92; line-height: 1.3; margin: 1px 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; }
   .ev-course { background: var(--course); }
   .cat-pick, #todo-cat-picker { display: flex; flex-wrap: wrap; gap: 5px; }
   #todo-cat-picker { margin-bottom: 8px; }
@@ -327,6 +328,9 @@
       <div class="field"><label>结束</label><input type="time" id="ev-end" step="1800"></div>
     </div>
     <div class="field"><label>分类</label><div class="cat-pick" id="ev-cat-pick"></div></div>
+    <div class="field"><label>具体内容（可选）</label>
+      <textarea id="ev-note" rows="2" placeholder="例: 复习第3章流体方程、整理FVCOM网格生成步骤" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 11px;color:var(--text);font-family:var(--body);font-size:13px;outline:none;resize:vertical;"></textarea>
+    </div>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="savePlanEvent()">保存</button>
       <button class="btn btn-danger" id="ev-delete" onclick="deletePlanEvent()" style="display:none;flex:0 0 auto;padding:10px 14px;">删除</button>
@@ -637,12 +641,18 @@ function remainingFreeToday(){
   const start=Math.max(nowMin, DAY_START*60), end=DAY_END*60;
   if(start>=end) return 0;
   const d=new Date(), date=ymd(d);
-  const segs=[
+  // from the red line (now) until 24:00, subtract dead time (courses/就活) AND self-made plans → truly free time left
+  let segs=[
     ...deadTimeOnDate(d).map(c=>[timeToMin(c.start),timeToMin(c.end)]),
     ...plans.filter(p=>p.date===date).map(p=>[timeToMin(p.start),timeToMin(p.end)])
-  ];
-  let busy=0;
-  segs.forEach(([s,e])=>{ const os=Math.max(s,start), oe=Math.min(e,end); if(oe>os) busy+=oe-os; });
+  ].map(([s,e])=>[Math.max(s,start),Math.min(e,end)]).filter(([s,e])=>e>s).sort((a,b)=>a[0]-b[0]);
+  let busy=0, curS=null, curE=null;
+  segs.forEach(([s,e])=>{
+    if(curE===null){ curS=s; curE=e; }
+    else if(s<=curE){ curE=Math.max(curE,e); }
+    else { busy+=curE-curS; curS=s; curE=e; }
+  });
+  if(curE!==null) busy+=curE-curS;
   return Math.max(0, (end-start)-busy);
 }
 // Red "now" line on the week grid and on today's day-detail
@@ -740,7 +750,7 @@ function renderWeek() {
     coursesOnDate(d).forEach(c=> placeBlock(di, c.start, c.end, c.name, 'ev-course', ()=>clickCourseBlock(c.id, date)));
     fixedOnDate(d).forEach(f=> placeBlock(di, f.start, f.end, f.name, 'ev-course'));
     shukatsuOnDate(d).forEach(s=> placeBlock(di, s.start, s.end, s.name, 'ev-shukatsu', ()=>alert('これは就活Agentの予定です。\n時間プランナーでは表示のみ（編集・削除はできません）。\n変更したい場合は就活Agent側で行ってください。')));
-    plans.filter(p=>p.date===date).forEach(p=> placeBlock(di, p.start, p.end, p.title, 'ev-plan', ()=>openPlanEdit(p.id), p.id, catColor(p.catId)));
+    plans.filter(p=>p.date===date).forEach(p=> placeBlock(di, p.start, p.end, p.title, 'ev-plan', ()=>openPlanEdit(p.id), p.id, catColor(p.catId), p.note));
   });
 
   // week free-time banner
@@ -753,7 +763,7 @@ function renderWeek() {
   if (typeof renderWeekGoal==='function') renderWeekGoal();
   renderNowLine();
 }
-function placeBlock(dayIndex, start, end, title, cls, onclick, dragId, color) {
+function placeBlock(dayIndex, start, end, title, cls, onclick, dragId, color, note) {
   const grid = document.getElementById('week-grid');
   const startMin = timeToMin(start), endMin = timeToMin(end);
   const top = (startMin - DAY_START*60)/SLOT_MIN;
@@ -770,7 +780,7 @@ function placeBlock(dayIndex, start, end, title, cls, onclick, dragId, color) {
   block.style.height = (height*24 - 3)+'px';
   const durMin = endMin - startMin;
   const durStr = durMin>=60 ? `${Math.floor(durMin/60)}h${durMin%60?durMin%60+'m':''}` : `${durMin}m`;
-  block.innerHTML = `<div class="et">${title}</div><div class="etime">${start}–${end} · ${durStr}</div>`;
+  block.innerHTML = `<div class="et">${title}</div>${note?`<div class="enote">${escapeHtml(note)}</div>`:''}<div class="etime">${start}–${end} · ${durStr}</div>`;
   if (dragId != null) {
     block.style.cursor = 'grab';
     block.onmousedown = (e)=> startBlockDrag(e, dragId, 'move');
@@ -903,6 +913,7 @@ function quickAddPlan(date, min) {
   document.getElementById('ev-title').value = '';
   document.getElementById('ev-start').value = minToTime(min);
   document.getElementById('ev-end').value = minToTime(min+60);
+  document.getElementById('ev-note').value = '';
   document.getElementById('ev-delete').style.display='none';
   evCatId = categories[0] && categories[0].id;
   renderEvCatPick();
@@ -925,6 +936,7 @@ function openPlanEdit(id) {
   document.getElementById('ev-title').value = p.title;
   document.getElementById('ev-start').value = p.start;
   document.getElementById('ev-end').value = p.end;
+  document.getElementById('ev-note').value = p.note || '';
   document.getElementById('ev-delete').style.display='block';
   evCatId = p.catId || (categories[0] && categories[0].id);
   renderEvCatPick();
@@ -934,12 +946,13 @@ function savePlanEvent() {
   const title = document.getElementById('ev-title').value.trim();
   const start = document.getElementById('ev-start').value;
   const end = document.getElementById('ev-end').value;
+  const note = document.getElementById('ev-note').value.trim();
   if (!title || !start || !end) return;
   if (editingPlanId) {
     const p = plans.find(p=>p.id===editingPlanId);
-    Object.assign(p, { title, start, end, catId: evCatId });
+    Object.assign(p, { title, start, end, catId: evCatId, note });
   } else {
-    plans.push({ id: Date.now(), date: pendingDate, title, start, end, catId: evCatId });
+    plans.push({ id: Date.now(), date: pendingDate, title, start, end, catId: evCatId, note });
   }
   save('plans',plans); closeModal('event-modal'); render();
 }
@@ -1082,7 +1095,7 @@ function renderDayDetail() {
   const cols = document.getElementById('dd-cols');
   cols.innerHTML = html;
   const ddSlots = cols.querySelectorAll('.dd-slot');
-  const placeDD = (colOffset, start, end, title, cls, onclick, dragInfo, color) => {
+  const placeDD = (colOffset, start, end, title, cls, onclick, dragInfo, color, note) => {
     const startMin=timeToMin(start), endMin=timeToMin(end);
     const top=Math.round((startMin-DAY_START*60)/SLOT_MIN);
     const height=(endMin-startMin)/SLOT_MIN;
@@ -1092,7 +1105,7 @@ function renderDayDetail() {
     const b=document.createElement('div');
     b.className=`ev-block ${cls}`; b.style.top='0px'; b.style.height=(height*28-3)+'px';
     if(color) b.style.background=color;
-    b.innerHTML=`<div class="et">${title}</div><div class="etime">${start}–${end}</div>`;
+    b.innerHTML=`<div class="et">${title}</div>${note?`<div class="enote">${escapeHtml(note)}</div>`:''}<div class="etime">${start}–${end}</div>`;
     if(dragInfo){
       b.style.cursor='grab';
       b.onmousedown=(e)=>startDDDrag(e, dragInfo.kind, dragInfo.id, 'move');
@@ -1110,7 +1123,7 @@ function renderDayDetail() {
   dead.forEach(c=> placeDD(0, c.start,c.end,c.name, c.kind==='shukatsu'?'ev-shukatsu':'ev-course'));
   dead.forEach(c=> placeDD(1, c.start,c.end,c.name, c.kind==='shukatsu'?'ev-shukatsu':'ev-course'));
   // plan blocks: draggable (drag to actual column to generate an actual; drag within plan column to move)
-  plans.filter(p=>p.date===detailDate).forEach(p=> placeDD(0, p.start,p.end,p.title,'ev-plan', null, {kind:'plan', id:p.id}, catColor(p.catId)));
+  plans.filter(p=>p.date===detailDate).forEach(p=> placeDD(0, p.start,p.end,p.title,'ev-plan', null, {kind:'plan', id:p.id}, catColor(p.catId), p.note));
   // actual blocks: draggable (move) + resizable
   actuals.filter(a=>a.date===detailDate).forEach(a=> placeDD(1, a.start,a.end,a.title, a.status==='done'?'ev-done':a.status==='miss'?'ev-miss':'ev-plan', null, {kind:'actual', id:a.id}));
   // stats — only count self-allocated time (plans/actuals), courses are dead time excluded
