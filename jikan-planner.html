@@ -151,6 +151,19 @@
   body.dragging-active .slot:hover { background: var(--accent-soft); }
   .ev-block .etime { font-family: var(--mono); font-size: 9px; opacity: 0.85; }
   .ev-course { background: var(--course); }
+  .cat-pick, #todo-cat-picker { display: flex; flex-wrap: wrap; gap: 5px; }
+  #todo-cat-picker { margin-bottom: 8px; }
+  .cat-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border: 1px solid var(--border); background: var(--surface2); border-radius: 999px; cursor: pointer; font-size: 11px; color: var(--text2); font-family: var(--body); transition: all 0.12s; }
+  .cat-chip::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--c, #9ca3af); flex-shrink: 0; }
+  .cat-chip.sel { background: var(--c, var(--accent)); color: #fff; border-color: var(--c, var(--accent)); }
+  .cat-chip.sel::before { background: #fff; }
+  .cat-chip.cat-manage::before { display: none; }
+  .chat-bubble { max-width: 85%; padding: 9px 12px; border-radius: 13px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .chat-user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+  .chat-ai { align-self: flex-start; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .day-char-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--accent-soft); color: var(--accent); border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .day-note-dot { font-size: 10px; color: var(--accent); }
+  .week-goal-bar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; margin-bottom: 8px; background: var(--accent-soft); border: 1px solid var(--border); border-radius: 10px; font-size: 13px; color: var(--accent); }
   .ev-shukatsu { background: #2dd4bf; color: #0d2b28; cursor: help; }
   :root[data-theme="dark"] .ev-shukatsu { color: #04140f; }
   .ev-plan { background: var(--plan); }
@@ -206,6 +219,11 @@
   .dow-pick { display: flex; gap: 4px; }
   .dow-pick button { flex: 1; padding: 8px 0; border: 1px solid var(--border); background: var(--surface2); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text2); }
   .dow-pick button.sel { background: var(--course); color: #fff; border-color: var(--course); }
+  .period-pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .period-pick button { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 0; border: 1px solid var(--border); background: var(--surface2); border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text); transition: all 0.12s; }
+  .period-pick button:hover { border-color: var(--course); }
+  .period-pick button.sel { background: var(--course); color: #fff; border-color: var(--course); }
+  .period-pick button .ptime { font-family: var(--mono); font-size: 10px; font-weight: 400; opacity: 0.75; }
   /* Day detail (plan vs actual) */
   .day-detail { position: fixed; inset: 0; background: var(--bg); z-index: 90; display: none; flex-direction: column; }
   .day-detail.open { display: flex; }
@@ -248,6 +266,7 @@
   <div class="freebar" id="freebar"></div>
   <button class="icon-btn" onclick="openCourseModal()">📚 课程</button>
   <button class="icon-btn" onclick="toggleSidebar()" id="todo-toggle">📝 待办</button>
+  <button class="icon-btn" onclick="openStats()">📊 统计</button>
   <button class="icon-btn" onclick="openAIPanel()" id="ai-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);">✨ AI</button>
   <button class="icon-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
   <button class="icon-btn" onclick="openSettings()" title="設定">⚙️</button>
@@ -255,6 +274,7 @@
 
 <div class="main">
   <div class="week-wrap">
+    <div id="week-goal-bar" class="week-goal-bar" style="display:none;"></div>
     <div class="week-grid" id="week-grid"></div>
     <div class="month-grid" id="month-grid" style="display:none;"></div>
   </div>
@@ -262,6 +282,7 @@
     <div class="side-sec">
       <div class="side-title">待办清单</div>
       <input class="todo-input" id="todo-input" placeholder="输入任务后按 Enter" onkeydown="if(event.key==='Enter')addTodo()">
+      <div id="todo-cat-picker" style="margin-top:8px;"></div>
       <div class="todo-list" id="todo-list"></div>
     </div>
     <div class="side-sec" style="flex:1;overflow-y:auto;">
@@ -285,6 +306,7 @@
       <div class="field"><label>开始</label><input type="time" id="ev-start" step="1800"></div>
       <div class="field"><label>结束</label><input type="time" id="ev-end" step="1800"></div>
     </div>
+    <div class="field"><label>分类</label><div class="cat-pick" id="ev-cat-pick"></div></div>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="savePlanEvent()">保存</button>
       <button class="btn btn-danger" id="ev-delete" onclick="deletePlanEvent()" style="display:none;flex:0 0 auto;padding:10px 14px;">删除</button>
@@ -311,9 +333,13 @@
     <div class="field" id="c-date-field" style="display:none;"><label>日期</label>
       <input type="date" id="c-date">
     </div>
+    <div class="field" id="c-period-field">
+      <label>時限（クリックで時間を自動入力）</label>
+      <div class="period-pick" id="c-period"></div>
+    </div>
     <div class="row2">
-      <div class="field"><label>开始</label><input type="time" id="c-start" step="1800" value="09:00"></div>
-      <div class="field"><label>结束</label><input type="time" id="c-end" step="1800" value="10:30"></div>
+      <div class="field"><label>开始</label><input type="time" id="c-start" step="300" value="08:30"></div>
+      <div class="field"><label>结束</label><input type="time" id="c-end" step="300" value="10:15"></div>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="saveCourse()">添加</button>
@@ -341,6 +367,43 @@
       <button class="btn btn-danger" id="dd-del" onclick="deleteDDEntry()" style="display:none;flex:0 0 auto;padding:10px 14px;">删除</button>
       <button class="btn btn-ghost" onclick="closeModal('dd-modal')">关闭</button>
     </div>
+  </div>
+</div>
+
+<!-- Category management modal -->
+<div class="modal" id="cat-modal" style="z-index:125;">
+  <div class="modal-card">
+    <h3>🏷️ 分类管理</h3>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">每个分类一个固定颜色。统计会按分类汇总你的时间。</div>
+    <div id="cat-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input id="new-cat-name" placeholder="新分类名称" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-family:var(--body);font-size:13px;outline:none;">
+      <button class="btn btn-primary" style="flex:0 0 auto;padding:8px 16px;" onclick="addCategory()">添加</button>
+    </div>
+    <div class="btn-row"><button class="btn btn-ghost" onclick="closeModal('cat-modal')">关闭</button></div>
+  </div>
+</div>
+
+<!-- Stats modal -->
+<div class="modal" id="stats-modal" style="z-index:120;">
+  <div class="modal-card" style="width:560px;max-width:96vw;">
+    <h3>📊 统计</h3>
+    <div style="display:flex;gap:6px;margin-bottom:16px;">
+      <button class="ai-tab sel" id="st-week" onclick="setStatsRange('week')">本周</button>
+      <button class="ai-tab" id="st-month" onclick="setStatsRange('month')">本月</button>
+    </div>
+    <div style="font-family:var(--mono);font-size:12px;color:var(--text3);margin-bottom:6px;" id="stats-range-label"></div>
+    <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px;">
+      <div id="stats-pie" style="flex:0 0 auto;"></div>
+      <div id="stats-legend" style="flex:1;min-width:160px;font-size:12px;"></div>
+    </div>
+    <div id="stats-table"></div>
+    <div id="stats-notes" style="margin-top:16px;"></div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-primary" onclick="aiAnalyzeStats()" style="width:auto;padding:9px 18px;">✨ AI 分析与改进建议</button>
+    </div>
+    <div id="stats-ai-output" style="margin-top:14px;font-size:13px;line-height:1.7;"></div>
+    <div class="btn-row"><button class="btn btn-ghost" onclick="closeModal('stats-modal')">关闭</button></div>
   </div>
 </div>
 
@@ -413,9 +476,54 @@
     <span class="dd-title" id="dd-title"></span>
     <div class="spacer"></div>
     <button class="icon-btn" onclick="copyPlanToActual()" title="把计划复制到实绩栏，记录达成状况">📋 从计划生成实绩</button>
+    <button class="icon-btn" onclick="openDayNote()" title="用一句话回顾今天，和 AI 聊聊" style="background:var(--surface2);">📝 今天的回顾</button>
+    <button class="icon-btn" onclick="aiAnalyzeDay()" title="让 AI 分析今天的完成情况" style="background:var(--accent);color:#fff;border-color:var(--accent);">✨ AI分析</button>
+    <button class="icon-btn" onclick="openDayNote()" title="和 AI 聊聊今天" style="background:#f472b6;color:#fff;border-color:#f472b6;">📝 今日回顾</button>
     <span class="wk-label" id="dd-stat"></span>
   </div>
   <div class="dd-cols" id="dd-cols"></div>
+</div>
+
+<!-- Daily reflection chat modal -->
+<div class="modal" id="day-note-modal" style="z-index:135;">
+  <div class="modal-card" style="width:480px;max-width:96vw;display:flex;flex-direction:column;max-height:88vh;">
+    <h3 style="margin-bottom:4px;">📝 今天的回顾</h3>
+    <div id="dn-char" style="font-size:12px;color:var(--text2);margin-bottom:10px;min-height:18px;"></div>
+    <div id="dn-chat" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px;min-height:120px;max-height:46vh;"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;align-items:flex-end;">
+      <textarea id="dn-input" rows="1" placeholder="一句话说说今天…（做了什么、效率如何、哪些完成了/没完成）"
+        style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-family:var(--body);font-size:13px;outline:none;resize:none;line-height:1.5;"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDayNote();}"></textarea>
+      <button class="btn btn-primary" id="dn-send" style="flex:0 0 auto;padding:9px 16px;" onclick="sendDayNote()">发送</button>
+    </div>
+    <div style="font-size:10px;color:var(--text3);margin-top:6px;">想聊就聊，不想聊也没关系。聊完直接关掉就好，会自动保存。</div>
+    <div class="btn-row" style="margin-top:10px;"><button class="btn btn-ghost" onclick="closeModal('day-note-modal')">关闭</button></div>
+  </div>
+</div>
+
+<!-- Day AI analysis modal -->
+<div class="modal" id="dd-ai-modal" style="z-index:130;">
+  <div class="modal-card">
+    <h3>✨ 今天的 AI 分析</h3>
+    <div id="dd-ai-output" style="font-size:13px;line-height:1.7;"></div>
+    <div class="btn-row"><button class="btn btn-ghost" onclick="closeModal('dd-ai-modal')">关闭</button></div>
+  </div>
+</div>
+
+<!-- Daily reflection chatbox -->
+<div class="modal" id="day-note-modal" style="z-index:135;">
+  <div class="modal-card" style="width:480px;max-width:96vw;display:flex;flex-direction:column;max-height:88vh;">
+    <h3 style="flex-shrink:0;">📝 今天的回顾</h3>
+    <div id="dn-char" style="flex-shrink:0;font-size:12px;color:var(--text2);margin-bottom:6px;"></div>
+    <div id="dn-chat" style="flex:1;overflow-y:auto;min-height:160px;margin:10px 0;display:flex;flex-direction:column;gap:9px;padding-right:4px;"></div>
+    <div style="flex-shrink:0;display:flex;gap:8px;align-items:flex-end;">
+      <textarea id="dn-input" rows="2" placeholder="用一句话回顾今天… 做了什么、效率如何、什么完成了/没完成"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDayNote();}"
+        style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-family:var(--body);font-size:13px;outline:none;resize:none;"></textarea>
+      <button class="btn btn-primary" id="dn-send" style="flex:0 0 auto;padding:9px 16px;" onclick="sendDayNote()">发送</button>
+    </div>
+    <div class="btn-row" style="flex-shrink:0;"><button class="btn btn-ghost" onclick="closeModal('day-note-modal')">关闭</button></div>
+  </div>
 </div>
 
 <script>
@@ -428,10 +536,31 @@ const DOW = ['日','一','二','三','四','五','六'];
 let courses = JSON.parse(localStorage.getItem('jp_courses') || '[]'); // {id,name,day,start,end} weekly repeat
 let fixed   = JSON.parse(localStorage.getItem('jp_fixed')   || '[]'); // {id,name,date,start,end} one-time fixed
 let skips   = JSON.parse(localStorage.getItem('jp_skips')   || '[]'); // {courseId,date} skipped occurrences
-let todos   = JSON.parse(localStorage.getItem('jp_todos')   || '[]'); // {id,text,done,color}
-let plans   = JSON.parse(localStorage.getItem('jp_plans')   || '[]'); // {id,date,title,start,end,color}
-let actuals = JSON.parse(localStorage.getItem('jp_actuals') || '[]'); // {id,date,title,start,end,status}
+let todos   = JSON.parse(localStorage.getItem('jp_todos')   || '[]'); // {id,text,done,catId}
+let plans   = JSON.parse(localStorage.getItem('jp_plans')   || '[]'); // {id,date,title,start,end,catId}
+let actuals = JSON.parse(localStorage.getItem('jp_actuals') || '[]'); // {id,date,title,start,end,status,catId}
+// Categories: each has a fixed color. Tasks/plans/actuals reference one by catId.
+let categories = JSON.parse(localStorage.getItem('jp_categories') || 'null');
+if (!categories) {
+  categories = [
+    { id:'study', name:'学习/研究', color:'#0ea5e9' },
+    { id:'shukatsu', name:'就活', color:'#10b981' },
+    { id:'life', name:'生活', color:'#f59e0b' },
+    { id:'rest', name:'休息', color:'#8b5cf6' },
+    { id:'social', name:'社交', color:'#ec4899' },
+  ];
+  localStorage.setItem('jp_categories', JSON.stringify(categories));
+}
+const CAT_PALETTE = ['#0ea5e9','#10b981','#f59e0b','#8b5cf6','#ec4899','#ef4444','#14b8a6','#6366f1','#eab308','#06b6d4'];
+function catById(id){ return categories.find(c=>c.id===id) || null; }
+function catColor(id){ const c=catById(id); return c?c.color:'#9ca3af'; }
+function catName(id){ const c=catById(id); return c?c.name:'未分类'; }
+function mondayOf(d){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); x.setHours(0,0,0,0); return x; }
 let weekOffset = 0;
+// Daily reflection notes: { 'YYYY-MM-DD': { messages:[{role,content}], char:'AI的定性', updatedAt } }
+let dayNotes = JSON.parse(localStorage.getItem('jp_daynotes') || '{}');
+// Weekly goals keyed by that week's Monday date: { 'YYYY-MM-DD': 'goal text' }
+let weekGoals = JSON.parse(localStorage.getItem('jp_weekgoals') || '{}');
 let viewMode = 'week'; // 'week' or 'month'
 let courseDow = 1; // selected day in course modal
 // returns courses active on a given date (respecting skips)
@@ -519,10 +648,15 @@ function renderWeek() {
   days.forEach(d => {
     const isToday = ymd(d)===todayStr;
     const free = freeMinutesForDate(d);
+    const note = dayNotes[ymd(d)];
+    const noteTag = (note && note.char)
+      ? `<div class="day-note-dot" title="${note.char.replace(/"/g,'&quot;')}">📝 ${note.char.length>8?note.char.slice(0,8)+'…':note.char}</div>`
+      : '';
     html += `<div class="col-head${isToday?' today':''}" onclick="openDayDetail('${ymd(d)}')">
       <div class="dow">${DOW[d.getDay()]}</div>
       <div class="dnum">${d.getDate()}</div>
       <div class="free-mini">空 ${fmtHM(free)}</div>
+      ${noteTag}
     </div>`;
   });
   // time rows
@@ -547,7 +681,7 @@ function renderWeek() {
     coursesOnDate(d).forEach(c=> placeBlock(di, c.start, c.end, c.name, 'ev-course', ()=>clickCourseBlock(c.id, date)));
     fixedOnDate(d).forEach(f=> placeBlock(di, f.start, f.end, f.name, 'ev-course'));
     shukatsuOnDate(d).forEach(s=> placeBlock(di, s.start, s.end, s.name, 'ev-shukatsu', ()=>alert('これは就活Agentの予定です。\n時間プランナーでは表示のみ（編集・削除はできません）。\n変更したい場合は就活Agent側で行ってください。')));
-    plans.filter(p=>p.date===date).forEach(p=> placeBlock(di, p.start, p.end, p.title, 'ev-plan', ()=>openPlanEdit(p.id), p.id, p.color));
+    plans.filter(p=>p.date===date).forEach(p=> placeBlock(di, p.start, p.end, p.title, 'ev-plan', ()=>openPlanEdit(p.id), p.id, catColor(p.catId)));
   });
 
   // week free-time banner
@@ -556,6 +690,7 @@ function renderWeek() {
   document.getElementById('freebar').innerHTML = `
     <div class="stat"><span class="num">${fmtHM(weekFree)}</span><span class="lbl">本周空闲</span></div>
     <div class="stat"><span class="num">${fmtHM(weekBusy)}</span><span class="lbl">已排</span></div>`;
+  if (typeof renderWeekGoal==='function') renderWeekGoal();
 }
 function placeBlock(dayIndex, start, end, title, cls, onclick, dragId, color) {
   const grid = document.getElementById('week-grid');
@@ -639,15 +774,24 @@ function onBlockDragEnd() {
 }
 
 // ─── Todos ────────────────────────────────────────────────
-const TODO_COLORS = ['#0ea5e9','#8b5cf6','#10b981','#f59e0b','#ec4899','#ef4444','#14b8a6','#6366f1'];
+let todoCatId = null; // currently selected category for new todos
 function renderTodos() {
+  // ensure a default selected category
+  if (!todoCatId && categories.length) todoCatId = categories[0].id;
+  // category picker row
+  const picker = document.getElementById('todo-cat-picker');
+  if (picker) {
+    picker.innerHTML = categories.map(c =>
+      `<button class="cat-chip ${c.id===todoCatId?'sel':''}" style="--c:${c.color}" onclick="todoCatId='${c.id}';renderTodos()">${c.name}</button>`
+    ).join('') + `<button class="cat-chip cat-manage" onclick="openCatModal()" title="管理分类">⚙</button>`;
+  }
   const list = document.getElementById('todo-list');
   const active = todos.filter(t=>!t.done);
   if (!active.length) { list.innerHTML = `<div class="empty-hint">添加任务后，<br>拖到日历上</div>`; return; }
   list.innerHTML = todos.map(t => `
     <div class="todo ${t.done?'completed':''}" draggable="true"
       ondragstart="dragTodo(event,${t.id})" ondragend="this.classList.remove('dragging')">
-      <span class="todo-dot" style="background:${t.color||TODO_COLORS[0]}" onclick="event.stopPropagation();cycleTodoColor(${t.id})" title="色を変更"></span>
+      <span class="todo-dot" style="background:${catColor(t.catId)}" onclick="event.stopPropagation();cycleTodoCat(${t.id})" title="分类: ${catName(t.catId)}（点击切换）"></span>
       <span class="ttext" onclick="toggleTodo(${t.id})">${t.text}</span>
       <span class="done-x" onclick="event.stopPropagation();deleteTodo(${t.id})" style="margin-left:auto;">✕</span>
     </div>`).join('');
@@ -656,15 +800,14 @@ function addTodo() {
   const inp = document.getElementById('todo-input');
   const text = inp.value.trim();
   if (!text) return;
-  const color = TODO_COLORS[todos.length % TODO_COLORS.length];
-  todos.push({ id: Date.now(), text, done: false, color });
+  todos.push({ id: Date.now(), text, done: false, catId: todoCatId || (categories[0] && categories[0].id) });
   inp.value=''; save('todos',todos); renderTodos();
 }
-function cycleTodoColor(id) {
+function cycleTodoCat(id) {
   const t = todos.find(t=>t.id===id);
   if (!t) return;
-  const i = TODO_COLORS.indexOf(t.color || TODO_COLORS[0]);
-  t.color = TODO_COLORS[(i+1) % TODO_COLORS.length];
+  const i = categories.findIndex(c=>c.id===t.catId);
+  t.catId = categories[(i+1) % categories.length].id;
   save('todos',todos); renderTodos(); render();
 }
 function toggleTodo(id) { const t=todos.find(t=>t.id===id); if(t){t.done=!t.done; save('todos',todos); renderTodos();} }
@@ -686,7 +829,7 @@ function dropTodo(e, date, min) {
     }
   } else if (dragType==='todo' && draggedTodoId!=null) {
     const t = todos.find(t=>t.id===draggedTodoId);
-    if (t) { plans.push({ id: Date.now(), date, title: t.text, start: minToTime(min), end: minToTime(min+60), color: t.color || TODO_COLORS[0] }); save('plans',plans); renderWeek(); }
+    if (t) { plans.push({ id: Date.now(), date, title: t.text, start: minToTime(min), end: minToTime(min+60), catId: t.catId }); save('plans',plans); renderWeek(); }
   }
   dragType=null; draggedTodoId=null; draggedPlanId=null;
 }
@@ -700,8 +843,18 @@ function quickAddPlan(date, min) {
   document.getElementById('ev-start').value = minToTime(min);
   document.getElementById('ev-end').value = minToTime(min+60);
   document.getElementById('ev-delete').style.display='none';
+  evCatId = categories[0] && categories[0].id;
+  renderEvCatPick();
   openModal('event-modal');
   setTimeout(()=>document.getElementById('ev-title').focus(), 50);
+}
+let evCatId = null;
+function renderEvCatPick(){
+  const wrap = document.getElementById('ev-cat-pick');
+  if (!wrap) return;
+  wrap.innerHTML = categories.map(c =>
+    `<button class="cat-chip ${c.id===evCatId?'sel':''}" style="--c:${c.color}" onclick="evCatId='${c.id}';renderEvCatPick()">${c.name}</button>`
+  ).join('');
 }
 function openPlanEdit(id) {
   const p = plans.find(p=>p.id===id);
@@ -712,6 +865,8 @@ function openPlanEdit(id) {
   document.getElementById('ev-start').value = p.start;
   document.getElementById('ev-end').value = p.end;
   document.getElementById('ev-delete').style.display='block';
+  evCatId = p.catId || (categories[0] && categories[0].id);
+  renderEvCatPick();
   openModal('event-modal');
 }
 function savePlanEvent() {
@@ -721,9 +876,9 @@ function savePlanEvent() {
   if (!title || !start || !end) return;
   if (editingPlanId) {
     const p = plans.find(p=>p.id===editingPlanId);
-    Object.assign(p, { title, start, end });
+    Object.assign(p, { title, start, end, catId: evCatId });
   } else {
-    plans.push({ id: Date.now(), date: pendingDate, title, start, end });
+    plans.push({ id: Date.now(), date: pendingDate, title, start, end, catId: evCatId });
   }
   save('plans',plans); closeModal('event-modal'); render();
 }
@@ -738,10 +893,19 @@ function deletePlanEvent() {
 
 // ─── Courses ──────────────────────────────────────────────
 let courseType = 'course';
+// UTokyo standard class periods (時限)
+const PERIODS = [
+  { n:1, start:'08:30', end:'10:15' },
+  { n:2, start:'10:25', end:'12:10' },
+  { n:3, start:'13:00', end:'14:45' },
+  { n:4, start:'14:55', end:'16:40' },
+  { n:5, start:'16:50', end:'18:35' },
+  { n:6, start:'18:45', end:'20:30' },
+];
 function openCourseModal() {
   courseType='course'; setCourseType('course');
   document.getElementById('c-date').value = ymd(new Date());
-  renderDowPick(); renderCourseList(); openModal('course-modal');
+  renderDowPick(); renderPeriodPick(); renderCourseList(); openModal('course-modal');
 }
 function setCourseType(t) {
   courseType = t;
@@ -749,6 +913,22 @@ function setCourseType(t) {
   document.getElementById('ct-fixed').className = t==='fixed'?'sel':'';
   document.getElementById('c-dow-field').style.display = t==='course'?'block':'none';
   document.getElementById('c-date-field').style.display = t==='fixed'?'block':'none';
+}
+function renderPeriodPick() {
+  const wrap = document.getElementById('c-period');
+  if (!wrap) return;
+  const curStart = document.getElementById('c-start').value;
+  const curEnd = document.getElementById('c-end').value;
+  wrap.innerHTML = PERIODS.map(p =>
+    `<button class="${(p.start===curStart&&p.end===curEnd)?'sel':''}" onclick="pickPeriod(${p.n})">${p.n}限<span class="ptime">${p.start}</span></button>`
+  ).join('');
+}
+function pickPeriod(n) {
+  const p = PERIODS.find(p=>p.n===n);
+  if (!p) return;
+  document.getElementById('c-start').value = p.start;
+  document.getElementById('c-end').value = p.end;
+  renderPeriodPick();
 }
 function renderDowPick() {
   const wrap = document.getElementById('c-dow');
@@ -835,14 +1015,13 @@ function renderDayDetail() {
     const min = DAY_START*60 + s*SLOT_MIN;
     const isHour = min%60===0;
     html += `<div class="dd-tlabel">${isHour?minToTime(min):''}</div>`;
-    html += `<div class="dd-slot ${isHour?'hour':''}" onclick="quickAddPlanDetail(${min})"></div>`;
-    html += `<div class="dd-slot ${isHour?'hour':''}" onclick="quickAddActual(${min})"></div>`;
+    html += `<div class="dd-slot ${isHour?'hour':''}" data-col="0" data-min="${min}" onclick="quickAddPlanDetail(${min})"></div>`;
+    html += `<div class="dd-slot ${isHour?'hour':''}" data-col="1" data-min="${min}" onclick="quickAddActual(${min})"></div>`;
   }
   const cols = document.getElementById('dd-cols');
   cols.innerHTML = html;
-  // place plan blocks (col 2) and course (also as plan, fixed)
   const ddSlots = cols.querySelectorAll('.dd-slot');
-  const placeDD = (colOffset, start, end, title, cls, onclick) => {
+  const placeDD = (colOffset, start, end, title, cls, onclick, dragInfo, color) => {
     const startMin=timeToMin(start), endMin=timeToMin(end);
     const top=Math.round((startMin-DAY_START*60)/SLOT_MIN);
     const height=(endMin-startMin)/SLOT_MIN;
@@ -851,22 +1030,101 @@ function renderDayDetail() {
     if(!cell) return;
     const b=document.createElement('div');
     b.className=`ev-block ${cls}`; b.style.top='0px'; b.style.height=(height*28-3)+'px';
+    if(color) b.style.background=color;
     b.innerHTML=`<div class="et">${title}</div><div class="etime">${start}–${end}</div>`;
-    if(onclick) b.onclick=(e)=>{e.stopPropagation();onclick();};
+    if(dragInfo){
+      b.style.cursor='grab';
+      b.onmousedown=(e)=>startDDDrag(e, dragInfo.kind, dragInfo.id, 'move');
+      const h=document.createElement('div'); h.className='resize-handle';
+      h.onmousedown=(e)=>startDDDrag(e, dragInfo.kind, dragInfo.id, 'resize');
+      b.appendChild(h);
+    } else if(onclick){
+      b.onclick=(e)=>{e.stopPropagation();onclick();};
+    }
     cell.appendChild(b);
   };
   const dd = new Date(detailDate+'T00:00:00');
   const dead = deadTimeOnDate(dd);
-  // dead time (courses + fixed) — auto-shown in BOTH columns, not editable
+  // dead time (courses + fixed + 就活) — auto-shown in BOTH columns, NOT draggable
   dead.forEach(c=> placeDD(0, c.start,c.end,c.name, c.kind==='shukatsu'?'ev-shukatsu':'ev-course'));
   dead.forEach(c=> placeDD(1, c.start,c.end,c.name, c.kind==='shukatsu'?'ev-shukatsu':'ev-course'));
-  plans.filter(p=>p.date===detailDate).forEach(p=> placeDD(0, p.start,p.end,p.title,'ev-plan', ()=>openDDModal('plan', p.id)));
-  actuals.filter(a=>a.date===detailDate).forEach(a=> placeDD(1, a.start,a.end,a.title, a.status==='done'?'ev-done':a.status==='miss'?'ev-miss':'ev-plan', ()=>openDDModal('actual', a.id)));
+  // plan blocks: draggable (drag to actual column to generate an actual; drag within plan column to move)
+  plans.filter(p=>p.date===detailDate).forEach(p=> placeDD(0, p.start,p.end,p.title,'ev-plan', null, {kind:'plan', id:p.id}, catColor(p.catId)));
+  // actual blocks: draggable (move) + resizable
+  actuals.filter(a=>a.date===detailDate).forEach(a=> placeDD(1, a.start,a.end,a.title, a.status==='done'?'ev-done':a.status==='miss'?'ev-miss':'ev-plan', null, {kind:'actual', id:a.id}));
   // stats — only count self-allocated time (plans/actuals), courses are dead time excluded
   const planMin = plans.filter(p=>p.date===detailDate).reduce((s,p)=>s+timeToMin(p.end)-timeToMin(p.start),0);
   const doneMin = actuals.filter(a=>a.date===detailDate && a.status==='done').reduce((s,a)=>s+timeToMin(a.end)-timeToMin(a.start),0);
   const rate = planMin? Math.round(doneMin/planMin*100):0;
   document.getElementById('dd-stat').textContent = `我的计划 ${fmtHM(planMin)} / 达成 ${fmtHM(doneMin)} (${rate}%)`;
+}
+// ── Day-detail drag: plan→actual generation, move, resize ──
+let ddDrag = null;
+function startDDDrag(e, kind, id, mode){
+  e.preventDefault(); e.stopPropagation();
+  const arr = kind==='plan'?plans:actuals;
+  const item = arr.find(x=>x.id===id); if(!item) return;
+  ddDrag = { kind, id, mode, startX:e.clientX, startY:e.clientY, origStart:timeToMin(item.start), origEnd:timeToMin(item.end), moved:false, genActualId:null };
+  document.body.classList.add('dragging-active');
+  document.addEventListener('mousemove', onDDDragMove);
+  document.addEventListener('mouseup', onDDDragEnd);
+}
+function onDDDragMove(e){
+  if(!ddDrag) return;
+  const dx=e.clientX-ddDrag.startX, dy=e.clientY-ddDrag.startY;
+  if(!ddDrag.moved && Math.abs(dx)<4 && Math.abs(dy)<4) return;
+  ddDrag.moved = true;
+  const arr = ddDrag.kind==='plan'?plans:actuals;
+  const item = arr.find(x=>x.id===ddDrag.id); if(!item) return;
+  const dur = ddDrag.origEnd - ddDrag.origStart;
+  if(ddDrag.mode==='resize'){
+    const deltaSlots = Math.round(dy/28); // 28px per slot in day detail
+    let newEnd = ddDrag.origEnd + deltaSlots*SLOT_MIN;
+    newEnd = Math.max(ddDrag.origStart+SLOT_MIN, Math.min(newEnd, DAY_END*60));
+    if(minToTime(newEnd)!==item.end){ item.end=minToTime(newEnd); save(ddDrag.kind==='plan'?'plans':'actuals',arr); renderDayDetail(); }
+    return;
+  }
+  // move mode: find slot under cursor
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const slot = under && under.closest && under.closest('.dd-slot');
+  if(!slot || slot.dataset.min===undefined) return;
+  const min = parseInt(slot.dataset.min), col = parseInt(slot.dataset.col);
+  if(ddDrag.kind==='actual'){
+    // actuals move freely (within actual column area)
+    if(item.start!==minToTime(min)){ item.start=minToTime(min); item.end=minToTime(Math.min(min+dur,DAY_END*60)); save('actuals',actuals); renderDayDetail(); }
+  } else {
+    // plan dragged
+    if(col===1){
+      // over the actual column → generate (or update) an actual from this plan; keep the plan where it is
+      if(!ddDrag.genActualId){
+        const na = { id:Date.now()+Math.floor(Math.random()*100000), date:detailDate, title:item.title, start:minToTime(min), end:minToTime(Math.min(min+dur,DAY_END*60)), status:'done', catId:item.catId, fromPlan:item.id };
+        actuals.push(na); ddDrag.genActualId = na.id;
+        save('actuals',actuals); renderDayDetail();
+      } else {
+        const na = actuals.find(a=>a.id===ddDrag.genActualId);
+        if(na && na.start!==minToTime(min)){ na.start=minToTime(min); na.end=minToTime(Math.min(min+dur,DAY_END*60)); save('actuals',actuals); renderDayDetail(); }
+      }
+    } else {
+      // back over the plan column → cancel any generated actual, move the plan instead
+      if(ddDrag.genActualId){ actuals=actuals.filter(a=>a.id!==ddDrag.genActualId); ddDrag.genActualId=null; save('actuals',actuals); }
+      if(item.start!==minToTime(min)){ item.start=minToTime(min); item.end=minToTime(Math.min(min+dur,DAY_END*60)); save('plans',plans); renderDayDetail(); }
+    }
+  }
+}
+function onDDDragEnd(){
+  document.removeEventListener('mousemove', onDDDragMove);
+  document.removeEventListener('mouseup', onDDDragEnd);
+  document.body.classList.remove('dragging-active');
+  if(!ddDrag) return;
+  // if a plan generated an actual (dragged to the right), restore the plan to its original spot
+  if(ddDrag.kind==='plan' && ddDrag.genActualId){
+    const p = plans.find(x=>x.id===ddDrag.id);
+    if(p){ p.start=minToTime(ddDrag.origStart); p.end=minToTime(ddDrag.origEnd); save('plans',plans); }
+  }
+  const moved=ddDrag.moved, kind=ddDrag.kind, id=ddDrag.id;
+  ddDrag = null;
+  renderDayDetail();
+  if(!moved && id) openDDModal(kind, id); // tap (no drag) = edit
 }
 let ddMode = 'plan';      // 'plan' or 'actual'
 let ddEditId = null;
@@ -909,13 +1167,14 @@ function saveDDEntry() {
   const start = document.getElementById('dd-start').value;
   const end = document.getElementById('dd-end').value;
   if (!title || !start || !end) return;
+  const defCat = categories[0] && categories[0].id;
   if (ddMode==='plan') {
     if (ddEditId) { Object.assign(plans.find(p=>p.id===ddEditId), {title,start,end}); }
-    else plans.push({ id:Date.now(), date:detailDate, title, start, end });
+    else plans.push({ id:Date.now(), date:detailDate, title, start, end, catId:defCat });
     save('plans',plans);
   } else {
     if (ddEditId) { Object.assign(actuals.find(a=>a.id===ddEditId), {title,start,end,status:ddStatus}); }
-    else actuals.push({ id:Date.now(), date:detailDate, title, start, end, status:ddStatus });
+    else actuals.push({ id:Date.now(), date:detailDate, title, start, end, status:ddStatus, catId:defCat });
     save('actuals',actuals);
   }
   closeModal('dd-modal'); renderDayDetail();
@@ -933,7 +1192,7 @@ function copyPlanToActual() {
   let added=0;
   dayPlans.forEach(p=>{
     if (existing.has(p.title+p.start)) return;
-    actuals.push({ id:Date.now()+Math.floor(Math.random()*100000), date:detailDate, title:p.title, start:p.start, end:p.end, status:'done' });
+    actuals.push({ id:Date.now()+Math.floor(Math.random()*100000), date:detailDate, title:p.title, start:p.start, end:p.end, status:'done', catId:p.catId });
     added++;
   });
   save('actuals',actuals); renderDayDetail();
@@ -957,6 +1216,7 @@ function setViewMode(mode){
   document.getElementById('week-grid').style.display = mode==='week'?'':'none';
   document.getElementById('month-grid').style.display = mode==='month'?'grid':'none';
   document.getElementById('today-btn').textContent = mode==='month'?'本月':'本周';
+  const wgb=document.getElementById('week-goal-bar'); if(wgb) wgb.style.display = mode==='week'?'flex':'none';
   render();
 }
 function renderMonth(){
@@ -980,13 +1240,16 @@ function renderMonth(){
     const dayPlans = plans.filter(p=>p.date===date);
     const dead = deadTimeOnDate(d);
     let bars = '';
-    const items = [...dead.map(x=>({color:'var(--course)'})), ...dayPlans.map(p=>({color:p.color||'var(--plan)'}))];
+    const items = [...dead.map(x=>({color:'var(--course)'})), ...dayPlans.map(p=>({color:catColor(p.catId)}))];
     items.slice(0,4).forEach(it=> bars += `<div class="m-bar" style="background:${it.color}"></div>`);
     const more = items.length>4 ? `<div class="m-more">+${items.length-4}</div>` : '';
+    const note = dayNotes[date];
+    const noteTag = (!other && note && note.char) ? `<div class="day-note-dot" title="${note.char.replace(/"/g,'&quot;')}" style="font-size:9px;">📝 ${note.char.length>6?note.char.slice(0,6)+'…':note.char}</div>` : '';
     html += `<div class="m-cell${other?' other':''}${isToday?' today':''}" onclick="openDayDetail('${date}')">
       <div class="m-date">${d.getDate()}</div>
       ${!other?`<div class="m-free">空 ${fmtHM(free)}</div>`:''}
       <div class="m-bars">${bars}${more}</div>
+      ${noteTag}
     </div>`;
     // stop after we've covered the month (5 or 6 rows)
     if (i>=34 && d.getMonth()!==month && (i+1)%7===0) break;
@@ -1101,24 +1364,35 @@ function rangeData(mode){
     const dead=deadTimeOnDate(d);
     const dayPlans=plans.filter(p=>p.date===date);
     const dayActs=actuals.filter(a=>a.date===date);
-    if(!dead.length && !dayPlans.length && !dayActs.length) return;
+    if(!dead.length && !dayPlans.length && !dayActs.length && !dayNotes[date]) return;
     let l=`${date}(${DOW[d.getDay()]}) 空闲${fmtHM(freeMinutesForDate(d))}`;
     if(dead.length) l+=` | 固定:${dead.map(c=>c.name+c.start+'-'+c.end).join(',')}`;
     if(dayPlans.length) l+=` | 计划:${dayPlans.map(p=>p.title+p.start+'-'+p.end).join(',')}`;
     if(dayActs.length) l+=` | 实绩:${dayActs.map(a=>a.title+a.start+'-'+a.end+'['+(a.status==='done'?'完成':a.status==='miss'?'未达':'部分')+']').join(',')}`;
+    const note=dayNotes[date];
+    if(note){
+      if(note.char) l+=` | 这天的注脚:「${note.char}」`;
+      const userWords=(note.messages||[]).filter(m=>m.role==='user').map(m=>m.content).join(' / ');
+      if(userWords) l+=` | 本人原话:${userWords}`;
+    }
     lines.push(l);
   });
   return lines.join('\n') || '（无数据）';
 }
 
 async function aiReview(mode){
-  aiLoading(mode==='month'?'正在分析本月…':'正在分析本周…');
+  aiLoading(mode==='month'?'正在回顾本月…':'正在回顾本周…');
   try {
     const data = rangeData(mode);
-    const sys = '你是一个时间管理教练。用户是东京大学的研究生，正在求职。基于他的「计划vs实绩」数据，给出务实、温和但诚实的复盘。重点：1)可支配时间的利用率 2)哪类任务反复完不成 3)计划与实际的差距在哪 4)下周3条具体建议。注意：固定時間(课/固定预定)是死时间不计入评价，只看他自己安排的计划和实绩。必须用简体中文回答（即使数据里有日文也用中文），简洁，多用具体数字。用Markdown：## 小标题、- 列表。';
+    let goalLine = '';
+    if (mode==='week'){
+      const g = weekGoals[ymd(mondayOf(weekOffset))];
+      if (g) goalLine = `\n本周一开始设的目标是：「${g}」\n`;
+    }
+    const sys = '你是用户温柔的陪伴者，像一个懂他、陪他很久的朋友，而不是教练。用户是东京大学的研究生，在经历有压力的求职季，容易把自我价值绑在产出上、对自己要求很高、容易自责。你看到的数据里除了「计划vs实绩」，还有他每天亲手写下的注脚和原话——请把这些真实的感受放在第一位，数字只是参考。复盘的重点：1)先真诚地看见他这段时间真实经历了什么（结合他的原话和注脚）2)如果设了周目标，温柔地对照目标和实际，但重心是"他在过程里做到了什么、有什么感受"，而不是达成率 3)给1-2条轻盈、可执行的小建议或提醒，像朋友的关心。绝对不要说"你应该更努力""效率低""差距大"这类施压的话，多用"已经""我看到""也许可以""不妨"。死时间(课/就活)是必须占用的，不计入评价。必须用简体中文，温暖、具体、不长篇，可用Markdown的-列表。';
     const out = await callGroq([
       {role:'system', content:sys},
-      {role:'user', content:`期間: ${mode==='month'?'本月':'本周'}\n\nデータ:\n${data}`}
+      {role:'user', content:`期间: ${mode==='month'?'本月':'本周'}${goalLine}\n\n这段时间的记录（含我每天写的注脚和原话）:\n${data}`}
     ]);
     renderAIOutput(out);
   } catch(e){ document.getElementById('ai-output').innerHTML = `<div style="color:var(--miss);font-size:12px;">错误: ${e.message}</div>`; }
@@ -1161,8 +1435,6 @@ async function aiPlan(){
     try { parsed = JSON.parse(out); } catch(e){ throw new Error('无法解析 AI 的返回结果'); }
     const newPlans = (parsed.plans||[]).filter(p=>p.date&&p.title&&p.start&&p.end);
     if (!newPlans.length) { document.getElementById('ai-output').innerHTML='<div style="font-size:12px;color:var(--text2);">没有可安排的计划。'; return; }
-    // preview + confirm
-    const colors=TODO_COLORS;
     document.getElementById('ai-output').innerHTML = `
       <h4>建议的计划 (${newPlans.length}项)</h4>
       <div style="max-height:200px;overflow-y:auto;">${newPlans.map((p,i)=>`<div style="padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;"><span style="color:var(--accent);font-family:var(--mono);">${p.date.slice(5)} ${p.start}-${p.end}</span> ${p.title}</div>`).join('')}</div>
@@ -1170,17 +1442,18 @@ async function aiPlan(){
   } catch(e){ document.getElementById('ai-output').innerHTML = `<div style="color:var(--miss);font-size:12px;">错误: ${e.message}</div>`; }
 }
 function applyAIPlans(newPlans){
+  const defCat = categories[0] && categories[0].id;
   newPlans.forEach((p,i)=>{
-    plans.push({ id:Date.now()+i, date:p.date, title:p.title, start:p.start, end:p.end, color:TODO_COLORS[i%TODO_COLORS.length] });
+    plans.push({ id:Date.now()+i, date:p.date, title:p.title, start:p.start, end:p.end, catId:defCat });
   });
   save('plans',plans);
   closeModal('ai-modal');
   setViewMode('week'); render();
-  alert(`${newPlans.length}项计划已添加。可以拖动微调。`);
+  alert(`${newPlans.length}项计划已添加。可以拖动微调，记得选好分类。`);
 }
 
 // minimal markdown -> html for AI output
-function renderAIOutput(md){
+function mdToHtml(md){
   let h = md
     .replace(/^### (.*)$/gm,'<h4>$1</h4>')
     .replace(/^## (.*)$/gm,'<h4>$1</h4>')
@@ -1189,8 +1462,244 @@ function renderAIOutput(md){
     .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
     .replace(/(<li>.*<\/li>)/gs, m=>'<ul>'+m+'</ul>')
     .replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
-  h = h.replace(/<\/ul><br><br><ul>/g,'').replace(/<\/ul><br><ul>/g,'');
-  document.getElementById('ai-output').innerHTML = h;
+  return h.replace(/<\/ul><br><br><ul>/g,'').replace(/<\/ul><br><ul>/g,'');
+}
+function renderAIOutput(md){
+  document.getElementById('ai-output').innerHTML = mdToHtml(md);
+}
+// ── Single-day AI analysis ──
+async function aiAnalyzeDay(){
+  if(!settings.groqKey){ alert('请先在主界面 ⚙️ 设置里填入 Groq API 密钥。'); return; }
+  const d = new Date(detailDate+'T00:00:00');
+  const dead = deadTimeOnDate(d).map(x=>x.name+x.start+'-'+x.end).join('，') || '无';
+  const dayPlans = plans.filter(p=>p.date===detailDate).map(p=>p.title+p.start+'-'+p.end).join('，') || '无';
+  const dayActs = actuals.filter(a=>a.date===detailDate).map(a=>a.title+a.start+'-'+a.end+'['+(a.status==='done'?'完成':a.status==='miss'?'未完成':'部分')+']').join('，') || '无';
+  const planMin = plans.filter(p=>p.date===detailDate).reduce((s,p)=>s+timeToMin(p.end)-timeToMin(p.start),0);
+  const doneMin = actuals.filter(a=>a.date===detailDate && a.status==='done').reduce((s,a)=>s+timeToMin(a.end)-timeToMin(a.start),0);
+  document.getElementById('dd-ai-output').innerHTML = '<div class="ai-loading"><span class="ai-spin"></span>正在分析今天…</div>';
+  openModal('dd-ai-modal');
+  try{
+    const sys = '你是时间管理教练。分析用户某一天的「计划 vs 实绩」。固定时间(课程/就活日程)是死时间，不计入评价，只看用户自己安排的时间。重点：1)今天自己安排的时间用得怎样 2)哪些计划完成了、哪些没完成 3)一句温和的鼓励或一条小建议。用户有把自我价值绑在产出上、容易过度自责的倾向，语气要温和、不施压。必须用简体中文，简洁(3-6句)，可用Markdown的-列表。';
+    const usr = `日期: ${detailDate}\n固定/死时间: ${dead}\n我的计划: ${dayPlans}\n实际完成: ${dayActs}\n计划总时长: ${fmtHM(planMin)}, 达成: ${fmtHM(doneMin)}`;
+    const out = await callGroq([{role:'system',content:sys},{role:'user',content:usr}]);
+    document.getElementById('dd-ai-output').innerHTML = mdToHtml(out);
+  }catch(e){
+    document.getElementById('dd-ai-output').innerHTML = `<div style="color:var(--miss);font-size:12px;">错误: ${e.message}</div>`;
+  }
+}
+
+// ─── Category management ──────────────────────────────────
+function openCatModal(){ renderCatList(); openModal('cat-modal'); }
+function renderCatList(){
+  document.getElementById('cat-list').innerHTML = categories.map(c=>`
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input type="color" value="${c.color}" onchange="updateCatColor('${c.id}',this.value)" style="width:30px;height:30px;border:none;background:none;cursor:pointer;padding:0;flex-shrink:0;">
+      <input value="${c.name.replace(/"/g,'&quot;')}" onchange="updateCatName('${c.id}',this.value)" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 9px;color:var(--text);font-family:var(--body);font-size:13px;outline:none;">
+      <button onclick="deleteCategory('${c.id}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;flex-shrink:0;" title="删除">✕</button>
+    </div>`).join('');
+}
+function addCategory(){
+  const name=document.getElementById('new-cat-name').value.trim();
+  if(!name) return;
+  const used=categories.map(c=>c.color);
+  const color=CAT_PALETTE.find(c=>!used.includes(c))||CAT_PALETTE[categories.length%CAT_PALETTE.length];
+  categories.push({ id:'cat'+Date.now(), name, color });
+  save('categories',categories);
+  document.getElementById('new-cat-name').value='';
+  renderCatList(); renderTodos(); render();
+}
+function updateCatName(id,v){ const c=catById(id); if(c){ c.name=v.trim()||c.name; save('categories',categories); renderTodos(); render(); } }
+function updateCatColor(id,v){ const c=catById(id); if(c){ c.color=v; save('categories',categories); renderTodos(); render(); } }
+function deleteCategory(id){
+  if(categories.length<=1){ alert('至少保留一个分类。'); return; }
+  if(!confirm('删除这个分类？已用此分类的任务会显示为「未分类」。')) return;
+  categories=categories.filter(c=>c.id!==id);
+  save('categories',categories);
+  if(todoCatId===id) todoCatId=categories[0].id;
+  renderCatList(); renderTodos(); render();
+}
+
+// ─── Stats (pie + table + AI) ─────────────────────────────
+let statsRange = 'week';
+function monthDaysArr(){
+  const base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+monthOffset);
+  const y=base.getFullYear(), m=base.getMonth(), last=new Date(y,m+1,0).getDate();
+  return Array.from({length:last},(_,i)=>new Date(y,m,i+1));
+}
+function statsData(range){
+  const days = range==='month' ? monthDaysArr() : weekDays();
+  const dateSet = new Set(days.map(ymd));
+  const actByCat={}, planByCat={};
+  actuals.forEach(a=>{ if(dateSet.has(a.date) && a.status!=='miss'){ const m=timeToMin(a.end)-timeToMin(a.start); actByCat[a.catId]=(actByCat[a.catId]||0)+m; } });
+  plans.forEach(p=>{ if(dateSet.has(p.date)){ const m=timeToMin(p.end)-timeToMin(p.start); planByCat[p.catId]=(planByCat[p.catId]||0)+m; } });
+  let courseMin=0, shukatsuMin=0;
+  days.forEach(d=>{ deadTimeOnDate(d).forEach(x=>{ const m=timeToMin(x.end)-timeToMin(x.start); if(x.kind==='shukatsu') shukatsuMin+=m; else courseMin+=m; }); });
+  return { days, actByCat, planByCat, courseMin, shukatsuMin };
+}
+function pieSVG(segments, size){
+  const total = segments.reduce((s,x)=>s+x.value,0);
+  if(!total) return `<div style="width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:12px;border:1px dashed var(--border2);border-radius:50%;">暂无<br>记录</div>`;
+  const r=size/2, cx=r, cy=r;
+  let angle=-Math.PI/2, paths='';
+  segments.forEach(seg=>{
+    if(seg.value<=0) return;
+    const frac=seg.value/total, a2=angle+frac*2*Math.PI;
+    if(frac>=0.9999){ paths+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${seg.color}"/>`; }
+    else {
+      const x1=cx+r*Math.cos(angle), y1=cy+r*Math.sin(angle);
+      const x2=cx+r*Math.cos(a2), y2=cy+r*Math.sin(a2);
+      const large=frac>0.5?1:0;
+      paths+=`<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${seg.color}"/>`;
+    }
+    angle=a2;
+  });
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}</svg>`;
+}
+function statsSegments(D){
+  const segs=[];
+  categories.forEach(c=>{ const v=D.actByCat[c.id]||0; if(v>0) segs.push({label:c.name,value:v,color:c.color}); });
+  if(D.courseMin>0) segs.push({label:'课程',value:D.courseMin,color:'#6366f1'});
+  if(D.shukatsuMin>0) segs.push({label:'就活',value:D.shukatsuMin,color:'#2dd4bf'});
+  return segs;
+}
+function openStats(){ document.getElementById('stats-ai-output').innerHTML=''; renderStats(); openModal('stats-modal'); }
+function setStatsRange(r){
+  statsRange=r;
+  document.getElementById('st-week').classList.toggle('sel', r==='week');
+  document.getElementById('st-month').classList.toggle('sel', r==='month');
+  document.getElementById('stats-ai-output').innerHTML='';
+  renderStats();
+}
+function renderStats(){
+  const D=statsData(statsRange);
+  document.getElementById('stats-range-label').textContent =
+    statsRange==='week' ? `本周 ${ymd(D.days[0]).slice(5)} ~ ${ymd(D.days[D.days.length-1]).slice(5)}（实际花费时间）`
+                        : `本月（实际花费时间）`;
+  const segs=statsSegments(D);
+  const total=segs.reduce((s,x)=>s+x.value,0);
+  document.getElementById('stats-pie').innerHTML = pieSVG(segs,160);
+  document.getElementById('stats-legend').innerHTML = segs.length
+    ? segs.map(s=>`<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;"><span style="width:11px;height:11px;border-radius:3px;background:${s.color};flex-shrink:0;"></span><span style="flex:1;">${s.label}</span><span style="font-family:var(--mono);color:var(--text2);">${fmtHM(s.value)} · ${Math.round(s.value/total*100)}%</span></div>`).join('')
+    : '<div style="color:var(--text3);">这段时间还没有实际记录。<br>在某天的「实绩」里记录后，这里就会有数据。</div>';
+  // table: per-category plan vs actual
+  let rows = categories.map(c=>{
+    const pl=D.planByCat[c.id]||0, ac=D.actByCat[c.id]||0;
+    if(pl===0&&ac===0) return '';
+    const rate=pl?Math.round(ac/pl*100):(ac>0?100:0);
+    return `<tr style="border-top:1px solid var(--border);">
+      <td style="padding:7px 4px;"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c.color};margin-right:6px;"></span>${c.name}</td>
+      <td style="font-family:var(--mono);color:var(--text2);">${fmtHM(pl)}</td>
+      <td style="font-family:var(--mono);color:var(--text2);">${fmtHM(ac)}</td>
+      <td style="font-family:var(--mono);color:${rate>=80?'var(--done)':rate>=40?'var(--text)':'var(--text3)'};">${rate}%</td></tr>`;
+  }).filter(Boolean).join('');
+  document.getElementById('stats-table').innerHTML = rows
+    ? `<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="color:var(--text3);text-align:left;"><th style="padding:4px;font-weight:500;">分类</th><th style="font-weight:500;">计划</th><th style="font-weight:500;">实际</th><th style="font-weight:500;">完成</th></tr></thead><tbody>${rows}</tbody></table>`
+    : '<div style="color:var(--text3);font-size:12px;padding:8px 0;">这段时间还没有计划或实际记录。</div>';
+  // daily notes (注脚) for the range
+  const noteRows = D.days.map(d=>{
+    const date=ymd(d), note=dayNotes[date];
+    if(!note || !note.char) return '';
+    return `<div style="display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--border);font-size:12px;">
+      <span style="font-family:var(--mono);color:var(--text3);flex-shrink:0;">${date.slice(5)}</span>
+      <span style="color:var(--text);">${escapeHtml(note.char)}</span></div>`;
+  }).filter(Boolean).join('');
+  document.getElementById('stats-notes').innerHTML = noteRows
+    ? `<div style="font-size:12px;color:var(--text3);margin-bottom:4px;">📝 这段时间的注脚</div>${noteRows}`
+    : '';
+}
+async function aiAnalyzeStats(){
+  if(!settings.groqKey){ alert('请先在 ⚙️ 设置里填入 Groq API 密钥。'); return; }
+  const D=statsData(statsRange);
+  const lines=[];
+  categories.forEach(c=>{ const pl=D.planByCat[c.id]||0, ac=D.actByCat[c.id]||0; if(pl||ac) lines.push(`${c.name}: 计划${fmtHM(pl)} 实际${fmtHM(ac)}`); });
+  if(D.courseMin) lines.push(`课程(死时间): ${fmtHM(D.courseMin)}`);
+  if(D.shukatsuMin) lines.push(`就活(死时间): ${fmtHM(D.shukatsuMin)}`);
+  document.getElementById('stats-ai-output').innerHTML='<div class="ai-loading"><span class="ai-spin"></span>正在分析…</div>';
+  try{
+    const sys='你是温和的时间管理伙伴。基于用户这段时间各分类的「计划vs实际」数据，做一个不施压的复盘。原则：1)先肯定做到的部分 2)中性地描述时间实际花在了哪（不评判"应该"怎样）3)如果有明显的计划-实际落差，温柔地指出，并给1-2条小而可执行的改进建议。重要：用户容易把自我价值绑在产出上、容易自责，所以绝对不要用"你应该更努力""效率低"这类施压的话，多用"已经""可以试试""不妨"。死时间(课程/就活)是必须占用的时间，不算在评价里。必须用简体中文，简洁(4-7句)，可用-列表。';
+    const out=await callGroq([{role:'system',content:sys},{role:'user',content:`范围:${statsRange==='week'?'本周':'本月'}\n各分类时间:\n${lines.join('\n')||'（暂无数据）'}`}]);
+    document.getElementById('stats-ai-output').innerHTML = mdToHtml(out);
+  }catch(e){ document.getElementById('stats-ai-output').innerHTML=`<div style="color:var(--miss);font-size:12px;">错误: ${e.message}</div>`; }
+}
+
+// ─── Daily reflection chat ────────────────────────────────
+function escapeHtml(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function openDayNote(){ renderDayNoteChat(); openModal('day-note-modal'); setTimeout(()=>{const i=document.getElementById('dn-input'); if(i)i.focus();},60); }
+function renderDayNoteChat(){
+  const n = dayNotes[detailDate];
+  document.getElementById('dn-char').innerHTML = (n&&n.char)
+    ? `今天的注脚：<b style="color:var(--text);">${escapeHtml(n.char)}</b>`
+    : '<span style="color:var(--text3);">聊几句，AI 会帮今天写一个温柔的注脚。</span>';
+  const chat = document.getElementById('dn-chat');
+  const msgs = (n&&n.messages)||[];
+  if(!msgs.length){ chat.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:24px 0;">今天过得怎么样？<br>说一句就好，做了什么、哪些完成了、哪些没顾上。</div>'; return; }
+  chat.innerHTML = msgs.map(m=> m.role==='user'
+    ? `<div style="align-self:flex-end;max-width:82%;background:var(--accent);color:#fff;padding:8px 11px;border-radius:13px 13px 3px 13px;font-size:13px;line-height:1.55;">${escapeHtml(m.content)}</div>`
+    : `<div style="align-self:flex-start;max-width:86%;background:var(--surface2);color:var(--text);padding:8px 11px;border-radius:13px 13px 13px 3px;font-size:13px;line-height:1.6;">${mdToHtml(m.content)}</div>`
+  ).join('');
+  chat.scrollTop = chat.scrollHeight;
+}
+function saveUserOnlyNote(text){
+  if(!dayNotes[detailDate]) dayNotes[detailDate]={messages:[],char:'',updatedAt:Date.now()};
+  dayNotes[detailDate].messages.push({role:'user',content:text});
+  dayNotes[detailDate].updatedAt=Date.now();
+  save('daynotes',dayNotes); render();
+}
+async function sendDayNote(){
+  const inp=document.getElementById('dn-input'); const text=inp.value.trim();
+  if(!text) return;
+  if(!settings.groqKey){
+    saveUserOnlyNote(text); inp.value=''; renderDayNoteChat();
+    alert('已记下你的话。想让 AI 回应你、给今天定性的话，可以在 ⚙️ 设置里填 Groq 密钥。');
+    return;
+  }
+  if(!dayNotes[detailDate]) dayNotes[detailDate]={messages:[],char:'',updatedAt:Date.now()};
+  dayNotes[detailDate].messages.push({role:'user',content:text});
+  inp.value=''; renderDayNoteChat();
+  const dayPlans=plans.filter(p=>p.date===detailDate).map(p=>p.title).join('、')||'无';
+  const dayActs=actuals.filter(a=>a.date===detailDate).map(a=>a.title+'['+(a.status==='done'?'完成':a.status==='miss'?'没做到':'部分')+']').join('、')||'无';
+  const sendBtn=document.getElementById('dn-send'); sendBtn.disabled=true;
+  document.getElementById('dn-chat').insertAdjacentHTML('beforeend','<div id="dn-typing" style="align-self:flex-start;color:var(--text3);font-size:12px;padding:2px 4px;">正在想…</div>');
+  const chat=document.getElementById('dn-chat'); chat.scrollTop=chat.scrollHeight;
+  try{
+    const sys=`你是用户温柔的每日回顾伙伴，像一个懂她的朋友。她在回顾今天。背景：她容易把自我价值绑在产出上、对自己要求很高、容易自责，正在经历有压力的求职季。你的任务：温柔地回应她，给一点实在但不施压的宽慰或小建议（简短，2-4句，别长篇大论，别说教）。绝不用"你应该""效率太低""要更努力"这类话；多用"已经""也挺好""不妨"。然后在回复最后另起一行，用【】给今天一个简短的注脚/定性（自由发挥，可以是心情也可以是概括，例如【在忙乱里也守住了节奏】）。今天的计划：${dayPlans}。今天实际：${dayActs}。必须用简体中文。`;
+    const msgs=[{role:'system',content:sys},...dayNotes[detailDate].messages.map(m=>({role:m.role,content:m.content}))];
+    const out=await callGroq(msgs);
+    const mt=out.match(/【(.+?)】/);
+    if(mt) dayNotes[detailDate].char=mt[1];
+    const reply=out.replace(/【.+?】/,'').trim();
+    dayNotes[detailDate].messages.push({role:'assistant',content:reply});
+    dayNotes[detailDate].updatedAt=Date.now();
+    save('daynotes',dayNotes); renderDayNoteChat(); render();
+  }catch(e){
+    const t=document.getElementById('dn-typing'); if(t)t.remove();
+    document.getElementById('dn-chat').insertAdjacentHTML('beforeend',`<div style="color:var(--miss);font-size:12px;">出错了：${escapeHtml(e.message)}</div>`);
+  }finally{
+    sendBtn.disabled=false; const t=document.getElementById('dn-typing'); if(t)t.remove();
+  }
+}
+
+// ─── Weekly goals ─────────────────────────────────────────
+function weekGoalKey(off){ return ymd(mondayOf(off===undefined?weekOffset:off)); }
+function renderWeekGoal(){
+  const bar=document.getElementById('week-goal-bar');
+  if(!bar) return;
+  const g=weekGoals[weekGoalKey()];
+  if(g){
+    bar.innerHTML=`<span style="opacity:0.85;">🎯 本周目标</span><span style="flex:1;color:var(--text);font-weight:500;">${escapeHtml(g)}</span><button class="icon-btn" style="padding:3px 9px;font-size:11px;" onclick="editWeekGoal()">编辑</button>`;
+    bar.style.display='flex';
+  } else {
+    bar.innerHTML=`<button class="icon-btn" style="padding:4px 11px;font-size:12px;" onclick="editWeekGoal()">🎯 设定本周目标</button>`;
+    bar.style.display='flex';
+  }
+}
+function editWeekGoal(){
+  const key=weekGoalKey();
+  const cur=weekGoals[key]||'';
+  const v=prompt('本周想达成什么？（会显示在周视图顶部，AI 复盘时也会对照它）', cur);
+  if(v===null) return;
+  if(v.trim()) weekGoals[key]=v.trim(); else delete weekGoals[key];
+  save('weekgoals',weekGoals); renderWeekGoal();
 }
 
 // ─── Init ─────────────────────────────────────────────────
