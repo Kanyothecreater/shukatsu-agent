@@ -164,6 +164,9 @@
   .day-char-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--accent-soft); color: var(--accent); border-radius: 999px; font-size: 12px; font-weight: 600; }
   .day-note-dot { font-size: 10px; color: var(--accent); }
   .week-goal-bar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; margin-bottom: 8px; background: var(--accent-soft); border: 1px solid var(--border); border-radius: 10px; font-size: 13px; color: var(--accent); }
+  .now-line { position: absolute; left: 0; right: 0; height: 0; border-top: 2px solid #ef4444; z-index: 7; pointer-events: none; }
+  .now-dot { position: absolute; left: -3px; top: -4px; width: 7px; height: 7px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px var(--surface); }
+  .stats-view { padding: 4px 8px 40px; overflow-y: auto; height: 100%; }
   .ev-shukatsu { background: #2dd4bf; color: #0d2b28; cursor: help; }
   :root[data-theme="dark"] .ev-shukatsu { color: #04140f; }
   .ev-plan { background: var(--plan); }
@@ -261,12 +264,12 @@
   <div class="wk-nav" style="margin-left:8px;">
     <button id="vm-week" class="vm-sel" onclick="setViewMode('week')">周</button>
     <button id="vm-month" onclick="setViewMode('month')">月</button>
+    <button id="vm-stats" onclick="setViewMode('stats')">📊 统计</button>
   </div>
   <div class="spacer"></div>
   <div class="freebar" id="freebar"></div>
   <button class="icon-btn" onclick="openCourseModal()">📚 课程</button>
   <button class="icon-btn" onclick="toggleSidebar()" id="todo-toggle">📝 待办</button>
-  <button class="icon-btn" onclick="openStats()">📊 统计</button>
   <button class="icon-btn" onclick="openAIPanel()" id="ai-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);">✨ AI</button>
   <button class="icon-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
   <button class="icon-btn" onclick="openSettings()" title="設定">⚙️</button>
@@ -277,6 +280,23 @@
     <div id="week-goal-bar" class="week-goal-bar" style="display:none;"></div>
     <div class="week-grid" id="week-grid"></div>
     <div class="month-grid" id="month-grid" style="display:none;"></div>
+    <div class="stats-view" id="stats-view" style="display:none;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;">
+        <button class="ai-tab sel" id="st-week" onclick="setStatsRange('week')">本周</button>
+        <button class="ai-tab" id="st-month" onclick="setStatsRange('month')">本月</button>
+        <span style="font-family:var(--mono);font-size:12px;color:var(--text3);margin-left:8px;" id="stats-range-label"></span>
+      </div>
+      <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;margin-bottom:22px;">
+        <div id="stats-pie" style="flex:0 0 auto;"></div>
+        <div id="stats-legend" style="flex:1;min-width:180px;font-size:13px;"></div>
+      </div>
+      <div id="stats-table"></div>
+      <div id="stats-notes" style="margin-top:18px;"></div>
+      <div style="margin-top:20px;">
+        <button class="btn btn-primary" onclick="aiAnalyzeStats()" style="width:auto;padding:9px 18px;">✨ AI 分析与改进建议</button>
+      </div>
+      <div id="stats-ai-output" style="margin-top:14px;font-size:13px;line-height:1.7;max-width:640px;"></div>
+    </div>
   </div>
   <aside class="sidebar">
     <div class="side-sec">
@@ -385,28 +405,6 @@
 </div>
 
 <!-- Stats modal -->
-<div class="modal" id="stats-modal" style="z-index:120;">
-  <div class="modal-card" style="width:560px;max-width:96vw;">
-    <h3>📊 统计</h3>
-    <div style="display:flex;gap:6px;margin-bottom:16px;">
-      <button class="ai-tab sel" id="st-week" onclick="setStatsRange('week')">本周</button>
-      <button class="ai-tab" id="st-month" onclick="setStatsRange('month')">本月</button>
-    </div>
-    <div style="font-family:var(--mono);font-size:12px;color:var(--text3);margin-bottom:6px;" id="stats-range-label"></div>
-    <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px;">
-      <div id="stats-pie" style="flex:0 0 auto;"></div>
-      <div id="stats-legend" style="flex:1;min-width:160px;font-size:12px;"></div>
-    </div>
-    <div id="stats-table"></div>
-    <div id="stats-notes" style="margin-top:16px;"></div>
-    <div style="margin-top:16px;">
-      <button class="btn btn-primary" onclick="aiAnalyzeStats()" style="width:auto;padding:9px 18px;">✨ AI 分析与改进建议</button>
-    </div>
-    <div id="stats-ai-output" style="margin-top:14px;font-size:13px;line-height:1.7;"></div>
-    <div class="btn-row"><button class="btn btn-ghost" onclick="closeModal('stats-modal')">关闭</button></div>
-  </div>
-</div>
-
 <!-- Settings modal -->
 <div class="modal" id="settings-modal" style="z-index:120;">
   <div class="modal-card">
@@ -632,6 +630,67 @@ function freeMinutesForDate(d) {
   const total = (DAY_END-DAY_START)*60;
   return Math.max(0, total - busyMinutesForDate(d));
 }
+// How many usable hours are LEFT today (from now until DAY_END, minus dead time & plans in that window)
+function remainingFreeToday(){
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes();
+  const start=Math.max(nowMin, DAY_START*60), end=DAY_END*60;
+  if(start>=end) return 0;
+  const d=new Date(), date=ymd(d);
+  const segs=[
+    ...deadTimeOnDate(d).map(c=>[timeToMin(c.start),timeToMin(c.end)]),
+    ...plans.filter(p=>p.date===date).map(p=>[timeToMin(p.start),timeToMin(p.end)])
+  ];
+  let busy=0;
+  segs.forEach(([s,e])=>{ const os=Math.max(s,start), oe=Math.min(e,end); if(oe>os) busy+=oe-os; });
+  return Math.max(0, (end-start)-busy);
+}
+// Red "now" line on the week grid and on today's day-detail
+function renderNowLine(){
+  document.querySelectorAll('.now-line').forEach(n=>n.remove());
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes();
+  if(nowMin<DAY_START*60 || nowMin>DAY_END*60) return;
+  const todayStr=ymd(now);
+  const slotIdx=Math.floor((nowMin-DAY_START*60)/SLOT_MIN);
+  // week view
+  if(viewMode==='week'){
+    const days=weekDays();
+    const di=days.findIndex(d=>ymd(d)===todayStr);
+    if(di>=0){
+      const slots=document.getElementById('week-grid').querySelectorAll('.slot');
+      const cell=slots[slotIdx*7+di];
+      if(cell){
+        const offset=((nowMin-DAY_START*60)%SLOT_MIN)/SLOT_MIN*24;
+        const line=document.createElement('div');
+        line.className='now-line'; line.style.top=offset+'px';
+        line.innerHTML='<span class="now-dot"></span>';
+        cell.appendChild(line);
+      }
+    }
+  }
+  // day detail (only if viewing today)
+  if(typeof detailDate!=='undefined' && detailDate===todayStr){
+    const ddSlots=document.querySelectorAll('#dd-cols .dd-slot');
+    if(ddSlots.length){
+      const offset=((nowMin-DAY_START*60)%SLOT_MIN)/SLOT_MIN*28;
+      [0,1].forEach(col=>{
+        const cell=ddSlots[slotIdx*2+col];
+        if(cell){
+          const line=document.createElement('div');
+          line.className='now-line'; line.style.top=offset+'px';
+          if(col===0) line.innerHTML='<span class="now-dot"></span>';
+          cell.appendChild(line);
+        }
+      });
+    }
+  }
+}
+function tickNow(){
+  renderNowLine();
+  const rf=document.getElementById('remain-free');
+  if(rf) rf.textContent=fmtHM(remainingFreeToday());
+}
 function fmtHM(min) {
   const h=Math.floor(min/60), m=min%60;
   return m? `${h}h${m}m` : `${h}h`;
@@ -688,9 +747,11 @@ function renderWeek() {
   let weekFree=0, weekBusy=0;
   days.forEach(d=>{ weekFree+=freeMinutesForDate(d); weekBusy+=busyMinutesForDate(d); });
   document.getElementById('freebar').innerHTML = `
+    <div class="stat"><span class="num" id="remain-free">${fmtHM(remainingFreeToday())}</span><span class="lbl">今天还可用</span></div>
     <div class="stat"><span class="num">${fmtHM(weekFree)}</span><span class="lbl">本周空闲</span></div>
     <div class="stat"><span class="num">${fmtHM(weekBusy)}</span><span class="lbl">已排</span></div>`;
   if (typeof renderWeekGoal==='function') renderWeekGoal();
+  renderNowLine();
 }
 function placeBlock(dayIndex, start, end, title, cls, onclick, dragId, color) {
   const grid = document.getElementById('week-grid');
@@ -1057,6 +1118,7 @@ function renderDayDetail() {
   const doneMin = actuals.filter(a=>a.date===detailDate && a.status==='done').reduce((s,a)=>s+timeToMin(a.end)-timeToMin(a.start),0);
   const rate = planMin? Math.round(doneMin/planMin*100):0;
   document.getElementById('dd-stat').textContent = `我的计划 ${fmtHM(planMin)} / 达成 ${fmtHM(doneMin)} (${rate}%)`;
+  renderNowLine();
 }
 // ── Day-detail drag: plan→actual generation, move, resize ──
 let ddDrag = null;
@@ -1204,7 +1266,7 @@ function copyPlanToActual() {
 function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 let monthOffset = 0; // months from current, for month view
-function render() { if (viewMode==='week') renderWeek(); else renderMonth(); }
+function render() { if (viewMode==='stats') renderStats(); else if (viewMode==='month') renderMonth(); else renderWeek(); }
 function changeWeek(dir){
   if (viewMode==='month') { monthOffset = dir===0?0:monthOffset+dir; renderMonth(); }
   else { weekOffset = dir===0?0:weekOffset+dir; renderWeek(); }
@@ -1213,10 +1275,13 @@ function setViewMode(mode){
   viewMode = mode;
   document.getElementById('vm-week').classList.toggle('vm-sel', mode==='week');
   document.getElementById('vm-month').classList.toggle('vm-sel', mode==='month');
+  const sb=document.getElementById('vm-stats'); if(sb) sb.classList.toggle('vm-sel', mode==='stats');
   document.getElementById('week-grid').style.display = mode==='week'?'':'none';
   document.getElementById('month-grid').style.display = mode==='month'?'grid':'none';
+  const sv=document.getElementById('stats-view'); if(sv) sv.style.display = mode==='stats'?'block':'none';
   document.getElementById('today-btn').textContent = mode==='month'?'本月':'本周';
   const wgb=document.getElementById('week-goal-bar'); if(wgb) wgb.style.display = mode==='week'?'flex':'none';
+  if(mode==='stats'){ renderStats(); return; }
   render();
 }
 function renderMonth(){
@@ -1562,7 +1627,7 @@ function statsSegments(D){
   if(D.shukatsuMin>0) segs.push({label:'就活',value:D.shukatsuMin,color:'#2dd4bf'});
   return segs;
 }
-function openStats(){ document.getElementById('stats-ai-output').innerHTML=''; renderStats(); openModal('stats-modal'); }
+function openStats(){ document.getElementById('stats-ai-output').innerHTML=''; setViewMode('stats'); }
 function setStatsRange(r){
   statsRange=r;
   document.getElementById('st-week').classList.toggle('sel', r==='week');
@@ -1707,6 +1772,7 @@ applyTheme(localStorage.getItem('jp_theme')||'light');
 if (window.innerWidth <= 700) document.querySelector('.sidebar').classList.add('hidden');
 renderWeek();
 renderTodos();
+setInterval(tickNow, 60000);
 console.log('时间规划 app loaded');
 </script>
 
