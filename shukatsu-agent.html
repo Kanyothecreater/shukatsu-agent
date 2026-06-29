@@ -2,7 +2,15 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#11141c">
+<link rel="manifest" href="/manifest.json">
+<!-- iOS PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="就活Agent">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAam0lEQVR4nO2deZhkVZXgf+e+WHKNjIzMKqqohWYRhW5xAVSaEWxkFJQRZYB2HUAaCrVaQNqWRXaqVLDRRhhBBWZw+aRHBbpbcGHmG8BRsSkXKBZZbCyqpCuXyH2JyHj3zB/3RWZWUUtEVmbFi8j7+z79yMisyJcvfnHi3HPvPVdYeAQIgBDQ8oMrV65sHivI4YIsszY8VUSagHbguL1wTZ49RxERVX1G0GdAjKL/GzUvakkeGRraNLDtjx+bgIcsYBfyomQBn9tEzx+WH+juXvGqksg7RTkC+CtglYhscw2qiqeOEHmFRIq+jPKEwm+M1Xvz+S2PMhPMXuHFvF7OAjznNhecyazMJVLyEYWTQY8SMU0AioKT1zLzx0r07z31gzITdSOfxIgIiAtQqvp7kH+RQP/nwNbNG2f92/In97wxn0KXZQwBsktXHCZWLkI4XjD7gpajbzn1COb593viQ1lyBQIREURQawuI/EKwX8n3bvlB9LMS/W9eUpH5Emr6nZZdsuJ1ouZ80A+JmJSTWMvvwnL09iwuLKgFSYhEH8Cqv7DKFwb7X7ov+pmAbT+t58SeyjUdlTs7D+jQYOoTgl4tYhKqFpzkXmJPmen0REQCEFT1XhV71WDvlt9FP2PYg2i9J6JN/+LO7hXvBrlZxPxZJHIJn1J4do0FVMQEig1FuTbf1/R5eL4AJHAOVc1chSunGKls96q/M8I6AFX1InuqJQSMMYGotT8qCWuHe196gTkOGOciXgCEnZ3LV2uQuC0w5gRrwxIuYvsKhWeuTImYpKrmEf3gQO/mHzMHqasVOgGUMl2rjgiEB0SkW9WWosc9nj0lRCQQBEt46WDvls9RZfpRjdCzZNafiEhnlGJ4mT3ziQWsiEnMRepKhU4Apa6uVUfYGZlD3EeCxzPfKBCKmIRVvWyw76X1VCh1JTlvQBSZrehPvcyevYAAgaotGSPrst0rLsXJvNtsYHdCGyCclWZkvcyevYST2tqSMcG6bK4yqXeVchjAdnevXh5in4wis8VXMjx7FwVKYkySkv2bfH7z7ewi/diZnNH8+uFJi94pYsoDQC+zZ28TpR9awsj1HR37vp6ZibtXsDNBAyDM5Xr+HiPv9KU5T40xqAoiOZMwty9fvrwlevwVGcaOhHbluc6V7ySQ69TaKbzMntoTqNopMeaNE0VzC27C5RVRenvDBZCurq5WK80bQVZFi5Z9quGJCyW3+C08aaBvyw/ZbjZxe1EDwIaa/qSIWR0t+/Qye+KEgILKtfvtt1/TzGOO2bIaIMzllh0iQXCNqrX48pwnfgSqWpLAvGFozH6K7VKP2UILoGoSl4hbhW3xq+Y88SRQa1VUL8xkVuaY5WpZaAPYXG7ZIcAH1FrFDwQ98UUAK4HpNin5GE5oAzNCl6PzxWJMggXeau7xzAMm2oH7ydlRenqHdkfHflmUE3DR2Q8EPXFHVFVNYJZKWsu9XAIDhycAkVT4EQnMUvW5s6d+UFRVLJ8i2q9oYEMIqFg91Xd58dQZRlUR4fWZJasOxAmN7excvhqRIyKffbrhqRcECMUEzUbtSRDJq4ngZDGmBZ9ueOoPUfd//xUwbmOr1aNwOYhPOTz1hkEVRA5dvnx5zhx77LFGRP5SVctdQj2eekJQtSKSm5iSt5jHH//3NwP7RANCn2546hHF9UE9wYSBXR31ZvbphqeuETjIGNX3RF97oT31SqCqWOUYI0LT7n/e44k/ItJscMdAeDwNgXR2r/Sphqdh8LOCnobCC+1pKLzQnoaifnalGBPtU/Ap/14lOs0KO31qWayJt9CC24MQhjA2DqGFdKrWV7V4EKBYAmuhKQ2ppJM6xmLHV2gTiTwxBpl25A2HwqtWI39xsNuXEN972hioQjIBL2xCn30RfeI5eLnHvS5NaSd5DIln2c4YF5HbWjAfOAl5y+tgWTckEjA1VeurWxwILmgkApd25Iec2N/+F/SpF6C91T0es2gdP6EjmeUNh2LOPR0OWAWTk1Ccml6C4tlLuK3TM2I3N8HEJPa796P3PujSwYSJ1bgmXkIHAQwOIyceg/nUGTBVgskiGPEix4HQunQvm0Ef/Dn2+ttdWmJMbCJ1fHLowMDwKPLOo53MY5Pu8NHAVxZjQ/m16BtAjnsLRhV7wx2xGqjHwxYRmCjAin0w55wOhSn3jjfxuDzPdiQCGBhC3n4UcsJ/guHR2LxW8bgKFEQw55wK2XaXLxufYsQaY2B0HPOR9yAHroZCMRZpYe2FNgLjBeSwg5GjXg/DYz7NqAdEXODJZZH/8jaYLMQiCNXeHBGwFjnitfgdYHVGYGBiEnntwZDrgKmqTzKed2ovdKjQlEYOexWUSrF4l3sqRMTNJK7YB9lvXygWa55L1/a3i0CxiKxeBku7XZkuBnmYpwpUIREghx7oyno1fvlqL3Sp5D6u2lvdDfHUHyKwfEksatG1TzlEoGRjuzbAUyFTFZ8vv6DUXmio+ceUZx6ISapYc6FVlUQyQRAY3/y0jkmlU7F4/WIgNCQSCVKpeNwQT/UEJiCdTsfi9av5Wg4RYao4hYYhEpOPLU91qCiFyUIsXr8YCA2lUglbKMbihniqx5YspUI8hK55ygEuSsfhZnjmiBCb1y8WQns884UX2tNQeKE9DUV8hI5HCuaZCzF67Wpe5QBAwYbl6e8Y3R3P7rHWrcGJQQ0aYiC0mykMaM9loWmi5ssPPVUShkg2w2RLM2OqSI0DUu2FBoJEQKYjgyYSXuh6IwwxHRlobmJUteafrzUXGnAph7WoX3FXf0QpRxymvSFOg0JP/VLrsDwLL7SnofBCexoKL7SnofBCexqKeFQ5PHuX0DLdYNuY2Gyfmg+80IuJMIQgwHS0RUdNCDpZQCcmG0ZsL/RiIKoRm2wGOzLG2AMPoxMF1FrSf34Qqb84GB2bQGPQKGZP8UI3OuoaYUo6xeg9DzLyrfsoPPEcbjZLMbkOWk88ho6zTiFYuQwdG69rqb3QjUwks2lrJb/+Voa+/k+Y9lZMtg0Qd6JEKWTkm/cx8dC/sfSrV5I8YBVabjJfh9TvW9Gze1SRphT59bcyfMf3CfbpQprSblAYhmjJNVcM9slRermHvktuRMOwbmUGL3TjMlUiWJJj5J9+5CJzdyeUwh12qNJiCZPNUHzqBcYfeATT3uoGkHWIF7oRCUNMd5axn/yMwS/9D4Ku7O4FDS2STDBy9/0zVY86xOfQjUYYIm2tTPyfR+m9YL07HCGZqGABvkIg6PgEWsddYOvzbejZMaFFWpoI84P0XfGP7uvy6a8VIWidd4D1QjcK1iJNKezIOL1rr8Xmh5Dmpsq7uhqDFqZIHXoQ0tpct91gvdCNgHVNx3WiQM/HrqLwu6eRlubKB3aCe0OkEmTOfF9s9gfOBS90vRMdJh90tDP4lW8y+dhGTGdHdVUKEcK+AdpPP5H0nx+Ejtbv3s76vGrPNpjODPkvfIPhb/0zQXdndc3HjUEnimTOPIXOz5yDHZuo61PI6vfKPa6i0drC4I13MvTV72A62quLzImEi8wfPInudRegk5N1nW6AF7p+mSphujqZ+L+PMnjLd1yaUc1ALhFg84O0f+DddP7d2YR9g0RdFxfqivcKXuh6JAwxuQ4m/t8G+i+5EZNprS6yJhLY/BCt7z2e7usuRAsFNzCsc5nBC11/hCGmvZXCho30fuIa7GQBgqByoYMAOzxK8oBV5D59tpPZ2oaQGbzQ9YW1SDqFHZ+k/7qvYscnkOZ05alGYNCJSZKrl7P0a9dgshm0OFW3FY0d0Th/SaNjFUkk0OIUPR+/muLTf8Bk2tyCo0owBi0UMW0tLL31ahIrl6Hj9Vue2xmN9dc0Kqoux00m6L1gPZO//K3bRlWpzNF56hSm6PzMOST3X4EOj7pUpcHwQtcDVjGdGYa+djcTP9uAyWWrk1kVnZika92FtJ3yDuzgCCQac12aFzruhBaT62Dolm8zeNM3MdmMO066UoxgR8fJXfW3tP31idj+wYaMzGW80OCaDYah260Rp9VmpZKLzLfdzcAX73ATJ1WV5wJs/yBtJx9H+2knYPsGING4MsNiXw8dhpBIYLLtM4OjMMSOjjuxazkFHIaYzg4KGzYydPO33AAwWrdREYkAOzhC63veTte1F7q/qcEGgDti8QptrdvWPzzGyHd/SOnlXlAluXo5LScei2lrwQ6P1kaCUojJtFL47TP0rL0WFZAgqLw8F02cNL/1cLpv+Ht0sjC9YbbRWaRCK6athdHv/Zjhu+6h+My/R9EPCITUt/+Vjo+eQuu734YdGd+7m0bDEGlrpvjiFno+diV2dNzVmitNhYxBR8dIrFhK7tLz3KdQKazrBUfVsPiEttYt6Ln1uwx+8Q6krQWTzUy3OFZg6rkX6blgPV29A2TOfB92aHTv5J5WkVQKSiED624lHBiurjxnDFqcItini6W3Xk1y/5XYkcYsz+2MxfG2LWMt0tZK4d+eYPAf78J0d0bb+sNZg8IQaWki6Oxg4IbbmdzwJKazysrCXFAF47ZA9Zy/jomfPVblxElUay6VWHLjJaQO3h87PLKoZIbFJjSAtQzfdQ8SmJkJh+0JrVt4lk7Rd9HnKW58LiqXLeDW/iin77/qJiYe/DmmM1vFjhMBq9jRMXKXrCF92KuxA8MNW2veFYtHaGuR5iamnnqBiZ//Fmlt2bUwViGZIMwPsfW8Kyk+9YIrmy1EpA4tpquT4du/x/gDD0c9NKqsNY9Pkvvsx2k/473Y4bGGL8/tjMUjNLhum9VEWWuRlmbs4DBb11xO8enn3YlP8xmpwxCTbWf4zu+TX39rdRtbAZIJbO8Aned/hI6PnortG1w0A8Adsfj+cnVtsCouYYVhJPUoW9dcSeHpF1zdej6kjhbpj37/J+SvuQWTaY+mqiv890GA7Rug5YS3kjnjfYT5gUUtMywmoaPVZsmDVpN81X6uNltpjTkaKNqhYXrWXEHhqeddw8M9kTqKzMUnn2PgS3cibS1uAVIV65p1ZIyW4/+S7hsvdseqKYui1rwrFo/Q4KaSc1kyH34POjpeXQUgDJFml370rNnDnDoMkeYmir9/ka1rrsAOjrqGMBVPnAToyCjJA1fTfeMliKrbGLvIZYbFJnQQYIdGaDnhGFrecTT2P/rcR3SlHkynH8NsXXPF3NIPa5F0Gh2bpGftNdi+AaSlqbqJk7EJTC5L1/oLkUSAFkuLYlq7EhbfXVBFROi+/tO0nfoOt20f5pBTj9C75nIXqSuVWt0ifQJD/1U3EW7p2X21ZTZGoFQi6Myw9KtXkX7tq90i/UWeN89m8d0JEbTkItqSL19G50UfdWWuajaJRlKHgyMuUlcidZQbq0Dfp69n7P6HkEwVbWtFAMEOj5K74hM0vfFQ7MDQops42R2LT2iYXvQe9uXpOOc0cpec66a3y9+rhFnVj541l1N86vldSx2GBEtyDN3yHUbvfdDVmqvswWwHR+i8eA0txx1F2DsAycU3cbI7FqfQ4MQN3HrhzN+cRufF57rVdeXvVUK5+hFF6uJTz0cDxe1EtdHEyTfvY/iuewmWdlXX3SgI0PEJOj99Nh3n/TV2dPFOnOyOxSt0mSDA9g9FkXrNHKVunpH66VnVD8EtBW1vZfTu++m/8qYKezXPIpkk7Omn7fR3kV37IbfjxA8Ad4q/MwCBiSL1qXso9eiM1NkMOlHAdGWZ+Plv6PvslzGtLU7Ganpo9A/Q/LY30XnBfyPMD3qZd4O/O2Wm049TyV08V6ln0o/CxmdJ7LcvU8++SP6aW5B0ejp3r/R6dGyc5qMPZ+lXLo9WBS6ORfp7ghd6NlH6kTnnVDdQHB6dQ/UjjR0YoveT6xi750F6zr+OqZdeRtJVTJxEDWFMtp2uz1+EpJJ1fdTa3sQPk7dnOv04HUUY+Nxtbl1ypdE1jBY0DQzT88nrkKY0pq21uk76k0VMc5olX7qUIJdFx6uc1VzE+Ai9I6LctWOuObW1kAgwmTY3CKxUZhE0DDFNaZbcfAVNbzrMy1wlXuidsU1Ofa7b/QGVS63qRK6momEMOjBMx9oP0Xz0G7F5P3FSLV7oXVGW+pzT5jZQrAYRbH6Q7AVn0P7hkwl7837iZA54oXfHNlLPYfKlwt+hY+Nk//bDZC84Ax0d85F5jnihK2HWjOK01PPVIDyZcLXmY95E9sKzsIPDe/6cixgvdKUEATY/NBOph+ZB6iDADgyRPvIwutZd4FoOSP0fC1FLvNDVMF3Si6bJq13QtM1zuTQj/bpD2Oe/X+kOjC9VsTXMs0O80NUSuMN2tkk/oDoRjUGLRUgl6bpyLaajHR2v3wPj44S/g3Nhdk59SZVSR+uxxRiW3vRZUq/Z36UafvXcvOCFniuBcZH67CpKeuXvlUKWfOkSmo89EjviKxrziRd6TyinH7PXfsCOUwcjYKI3wVmn0HzcW7D9fuJkvvGV+z2lnH6cfRog5K//OpIIkKYmEHGdCVB0soiOT5JZ8346LzzTzQL6NGPe8ULPB1H5LXPGe0kdcgD5z3+N4u9fnGlxEAQkVy0ne9FZtP7no12a4asZC0I8hC43SalnjMGOjJE+8rUsu+t6Jjc8SWHDRrRkSR/2aprefBhBZ4eTuRGXgcbkjPDaC63qumQGpiGkLjewaT7mSFrefpR7vFTCThRcjt2gLQckmaz1JQC1FjrqU2H7BrAjo0iiMaTGKjo6hqpG3bmi2b8GlRmrlLb8RyzSqNreYVUknaL4wkuUtvS47vUx+ejaIwQndhC4s1GMicWLvSBEdfXJXz8FiSr2Sy4QtQ8ZxqDjExQee6K6/m6e2hMFpKlNf2Lq+U2YdBXnji8QtRcaEGOYePgx17u5USNZI2It0pxm8tHHo/Xbtc+jay+0tUhLE4XfPMXUM39AWppr/i73VEh0SNHEjx+pvt/IQl1SrS8AcIdEjo4x9I3/5Rfo1AthiMm0MXb/w0z+6nHXdDIGgSge9oQW09HO2P0PMXbfgwt3lolnfrAW0ilKW7YycOOdEKPBfDyEBggV095K/tpbKDzxbPWHtHv2DlYhMJhUkr7P3IDtybvBfIyEjseVoC4nmwrJX/UVSi/3uDNHwjA2N2vRE4ZIKoFpbiJ/w+1MPvYk0l5Fz5G9gHR2r4rXvLOJugZl2ui6ci2t7zoWOzyKLU4h0Yo1z15EFbUWMQaTaaO0eSt9F3+Rycc2YtpbXMSOEZLtXvG0EfMaVbXEJQUJDFqYgtDS/v530fGx9xMs6UILRXfYT2iJ1ZuwIXGzm5JOIs1NaGGK8QceYuAf7qTUm3cyV3qMxl5Ecl0r7saY01U1BOKzntFEp6OOjJFYvS+tJ72N5qPfSOqQAzGtzT5SLzSq6FSJ0qY/Mfno44z96BFXzUgnkXQqljIDKrnuFQ8g5oTYCV0mitY6PoE0N5E6aD+Sr9mfptcfEk3E1PoCGwwFSSaY2rKVwq+fZOr5TYS9eSSZcKU51RiPaQTJ5lacbwLz5VilHNsjUe5sLTpRcGekxGgg0pCIIEHg2viWJ03ie8+tiBhV+6tEqDxrILZXCribGZ1HIi1pRJrwoXmhiWoFs+59jFEAVf6Q6GwPfjkybvOIdLvjSGNuilX8gNCzHQKgKj8xmzZtGlL0d+IWBcU7Uns8O0YUHUlI8AsDWBF+GX3Dhz5PvWEREVW2rF37x2cNgAj/SpwHhR7PzrHiTle4/+qrUQOQ79nyK1X7nLi8w6cdnnrCoBqKCX4AqIHDk4BV1fvxQnvqCysiotZuHujd9CiAgQ0hgFhzh7U6QRwnVzyeHaOIiIp8AyjBsQmDi8hmYGDzRlHdEFU7Yl949HgAo9aW1JjvuC8fsuVBoABi4R/K/12b6/N4KiYUY0SVHwz1bPoDLrOYFjoEZKh/8z9btT5Ke+oBUWtDAl0Xfa2wbZnODQjVXIOIL9954kxJjDGq/GCwZ8vjRNEZthU6BILB/pd+aEN7v4gE+CjtiR8KImo1H4r9LNvtuto+EisQWsP5qoTR13720BMnSiImUBveONL3p2dxDk+XmrcX2gKJ4d7Nz1u114kJEoDfqeqJC6GISaoNH08nwy/jejNuk0XsKFcOgWBJZ/PnNAx/KmKS2/8jj6cGqGukZwethGdt3bp1jB1kEDsrzxnA5nIrVqoxv0G0E3UtCBf4oj2enTEVRefzBvq33IaLzq/IHnYmqAUS+fyWzWJLHxQx5VGkz6c9taAoJkiqDe+MZE6yk1R4VxG3BAT5/Ms/taXwMjGmnK94qT17k5IYk9LQPizafAGuRLfTcV0lM4IBEGa7V1xqTLBOrS1Fj/nZRM9CUxJjEhraR1KJqROjvNmdw7QTKsmJQyAx2LdlvbV6mYiP1J69QknEJFS3kXm3nb4qHeSVgMRg30vrLeGlkdQl/FJTz4KgRRGTUKsPp8w2Mu/Wt2rThgRQyi5ZcYkhWO/21Ma0n4enHlEgNCZIWLUPp0zxXdXIDNWX4UpAMNi75XOq4blAPqqATFX5PB7P9oQgImISYWi/PheZYe4DuwRQynQtOyIwyZtF5M1qbRg9n69Ve6pBcflyUrEDCpcP9m6+JfreLgeAO2JPKhVJXGROdXatuE2MORNAVX0VxFMhGoIEYgyq9tfGypr+/pceY6bOXHXhYU+lm/44yHatOlmEy0TkyFm5tZmH3+FpLJRol5QYI2q1T9Cb833BF+CPk8wEyjkxH7IJM8XuINe98jJVzpPALFc7Lbbgd8IsdsozzYGIKX+Sf9eoWdff/8dnmPFjjypn8ynY9PrpTGZlzqT4uMBaEbMPaNRlbHqRk4/cjU954ZCLxiIGBFU7JSLfE8uNUXoBO1mXMRcWQqrpi2tbtmxJspT8K0TXorxZjEmhGnVj1dlrQ3zZrzEov6aCk5jyuE5VX1DkjkDD7/f3/+n30c8HzEg/LyxUlCxXO6aXneZy+x2CsSconAR6qIgsK39PY9tv2FMNMn1oqqDWjqnwEsgPReSegd5Nv2TGh3kXefoa5vsJd/D85YHjtLVty5d3B4Xgrcbo8YisVqvHi+uR66lP3LYo9FFRtmhg7jElfp3Pb3qWbVOJBM6FBZth/v8bmoWlIq0U2QAAAABJRU5ErkJggg==">
+<link rel="icon" type="image/png" href="/icon-192.png">
 <title>就活 Agent</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -334,6 +342,7 @@
     <button onclick="showView('calendar', this)">📅 カレンダー</button>
     <button onclick="showView('memo', this)">📝 メモ</button>
     <button onclick="showView('board', this)">📊 進捗</button>
+    <button onclick="showView('mypage', this)">🔑 マイページ</button>
     <button onclick="openProfile()" title="プロフィール（履歴情報）">📋 履歴</button>
     <button onclick="toggleTheme()" id="theme-btn" title="テーマ切替">🌙</button>
     <button onclick="exportData()" title="バックアップをダウンロード">💾</button>
@@ -468,6 +477,19 @@
   <!-- ── Board View ── -->
   <div id="board-view" class="view-panel">
     <div class="board-container" id="board-container"></div>
+  </div>
+  <div id="mypage-view" class="view-panel" style="flex-direction:column;overflow-y:auto;padding:24px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+      <h2 style="font-size:18px;font-weight:700;margin:0;">🔑 マイページ情報</h2>
+      <span id="mypage-count" style="font-size:12px;color:var(--text3);"></span>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:18px;line-height:1.6;">
+      各社のマイページURL・ログインID・パスワードのヒントをここで一括管理。<br>
+      🔗 で開く、📋 でコピー。情報は各社の企業メモと同期しています。
+    </div>
+    <input type="text" id="mypage-search" placeholder="🔍 会社名で絞り込み" oninput="renderMypage()"
+      style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;margin-bottom:16px;max-width:300px;">
+    <div id="mypage-list" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
 </main>
 
@@ -689,6 +711,7 @@ function showView(v, btn) {
   if (v === 'calendar') renderCalendar();
   if (v === 'memo') renderMemoList();
   if (v === 'board') renderBoard();
+  if (v === 'mypage') renderMypage();
 }
 
 // ─── Today Dashboard ──────────────────────────────────────
@@ -1637,10 +1660,11 @@ function openEventDetail(id) {
     doneBtn.style.color = 'var(--amber)';
   }
 
-  // Show linked company memo (if this event's company has a company memo)
+  // Show linked company memo / prompt to register mypage info
   const cmBox = document.getElementById('detail-company-memo');
   const m = memos.find(mm => mm.isCompanyMemo && sameCompany(mm.company, ev.company));
-  if (m) {
+  const hasMypage = m && (m.loginUrl || m.loginId || m.loginNote);
+  if (hasMypage) {
     document.getElementById('detail-cm-title').textContent = ev.company;
     let parts = [];
     if (m.loginUrl) parts.push(`🔗 <a href="${m.loginUrl}" target="_blank" style="color:var(--accent);">${m.loginUrl}</a>`);
@@ -1651,15 +1675,36 @@ function openEventDetail(id) {
     cmBox.dataset.memoId = m.id;
     cmBox.style.display = 'block';
   } else {
-    cmBox.style.display = 'none';
+    // No mypage info yet → prompt to register
+    document.getElementById('detail-cm-title').textContent = ev.company;
+    document.getElementById('detail-cm-body').innerHTML =
+      `<span style="color:#f59e0b;">⚠️ この会社のマイページ情報がまだ登録されていません。</span>`
+      + `<br><button onclick="goRegisterMypage('${escapeAttr(ev.company).replace(/'/g,"\\'")}')" style="margin-top:10px;background:var(--accent);color:var(--bar-text);border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">🔑 今すぐ登録する</button>`;
+    cmBox.dataset.memoId = m ? m.id : '';
+    cmBox.style.display = 'block';
   }
 
   document.getElementById('event-detail-modal').dataset.id = id;
   document.getElementById('event-detail-modal').classList.add('open');
 }
-function openCompanyMemoFromEvent() {
-  const memoId = parseInt(document.getElementById('detail-company-memo').dataset.memoId);
+function goRegisterMypage(company){
   document.getElementById('event-detail-modal').classList.remove('open');
+  const btns = document.querySelectorAll('header nav button');
+  let mpBtn = null;
+  btns.forEach(b => { if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'mypage'")) mpBtn = b; });
+  showView('mypage', mpBtn);
+  const s = document.getElementById('mypage-search');
+  if (s){ s.value = company; renderMypage(); }
+}
+function openCompanyMemoFromEvent() {
+  const raw = document.getElementById('detail-company-memo').dataset.memoId;
+  const memoId = parseInt(raw);
+  document.getElementById('event-detail-modal').classList.remove('open');
+  if (!raw || isNaN(memoId)) {
+    const company = document.getElementById('detail-cm-title').textContent;
+    goRegisterMypage(company);
+    return;
+  }
   showView('memo', document.querySelectorAll('header nav button')[3]);
   openMemo(memoId);
 }
@@ -2304,6 +2349,86 @@ function applyMemoMode() {
 function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+function escapeAttr(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function copyText(t){
+  if(!t) return;
+  navigator.clipboard.writeText(t);
+  const toast=document.getElementById('copy-toast');
+  if(toast){ toast.textContent='📋 コピーしました'; toast.style.opacity='1'; toast.style.transform='translateX(-50%) translateY(0)';
+    setTimeout(()=>{ toast.style.opacity='0'; toast.style.transform='translateX(-50%) translateY(100px)'; },1500); }
+}
+// ─── Mypage central manager ──────────────────────────────
+function mypageMemoFor(name){ return memos.find(m => sameCompany(m.company, name)) || null; }
+function renderMypage(){
+  const list = document.getElementById('mypage-list');
+  if (!list) return;
+  const q = (document.getElementById('mypage-search').value||'').trim().toLowerCase();
+  if (!companies.length){
+    list.innerHTML = '<div style="color:var(--text3);font-size:13px;line-height:1.7;">まだ会社が登録されていません。<br>チャットでメールを貼り付けて予定を登録すると、会社がここに並びます。</div>';
+    updateMypageCount(); return;
+  }
+  let cs = companies.slice().sort((a,b)=> (a.name||'').localeCompare(b.name||'', 'ja'));
+  if (q) cs = cs.filter(c => (c.name||'').toLowerCase().includes(q));
+  if (!cs.length){ list.innerHTML = '<div style="color:var(--text3);font-size:13px;">該当する会社がありません。</div>'; updateMypageCount(); return; }
+  list.innerHTML = cs.map(c=>{
+    const m = mypageMemoFor(c.name) || {};
+    const has = !!(m.loginUrl || m.loginId || m.loginNote);
+    return `<div style="background:var(--surface);border:1px solid ${has?'var(--border2)':'var(--border)'};border-radius:10px;padding:14px 16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-weight:700;font-size:14px;">${escapeHtml(c.name||'')}</span>
+        ${has?'':'<span style="font-size:11px;color:#f59e0b;">⚠ 未登記</span>'}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--text3);width:34px;flex-shrink:0;">URL</span>
+          <input type="text" value="${escapeAttr(m.loginUrl||'')}" placeholder="https://..." oninput="saveMypageField(${c.id},'loginUrl',this.value)" style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;">
+          <a id="mp-link-${c.id}" href="${escapeAttr(m.loginUrl||'#')}" target="_blank" style="font-size:14px;text-decoration:none;opacity:${m.loginUrl?'1':'0.3'};pointer-events:${m.loginUrl?'auto':'none'};" title="開く">🔗</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--text3);width:34px;flex-shrink:0;">ID</span>
+          <input type="text" value="${escapeAttr(m.loginId||'')}" placeholder="ログインID" oninput="saveMypageField(${c.id},'loginId',this.value)" style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;">
+          <span onclick="copyMypageField(${c.id},'loginId')" style="font-size:13px;cursor:pointer;opacity:0.5;" title="コピー">📋</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--text3);width:34px;flex-shrink:0;">PW</span>
+          <input type="text" value="${escapeAttr(m.loginNote||'')}" placeholder="パスワードやヒント・登録メールなど" oninput="saveMypageField(${c.id},'loginNote',this.value)" style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;">
+          <span onclick="copyMypageField(${c.id},'loginNote')" style="font-size:13px;cursor:pointer;opacity:0.5;" title="コピー">📋</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  updateMypageCount();
+}
+function updateMypageCount(){
+  const el = document.getElementById('mypage-count');
+  if (!el) return;
+  const filled = companies.filter(c=>{ const m=mypageMemoFor(c.name); return m && (m.loginUrl||m.loginId||m.loginNote); }).length;
+  el.textContent = companies.length ? `${filled} / ${companies.length} 社 登録済み` : '';
+}
+function saveMypageField(companyId, field, value){
+  const c = companies.find(c=>c.id===companyId);
+  if (!c) return;
+  let m = mypageMemoFor(c.name);
+  if (!m){
+    m = { id: Date.now()+Math.floor(Math.random()*10000), title:c.name, content:'', company:c.name, isCompanyMemo:true, updatedAt:Date.now() };
+    memos.unshift(m);
+  }
+  m[field] = value.trim();
+  m.isCompanyMemo = true;
+  m.updatedAt = Date.now();
+  saveMemos();
+  if (field==='loginUrl'){
+    const link=document.getElementById('mp-link-'+companyId);
+    if (link){ const u=value.trim(); if(u){ link.href=u; link.style.opacity='1'; link.style.pointerEvents='auto'; } else { link.href='#'; link.style.opacity='0.3'; link.style.pointerEvents='none'; } }
+  }
+  updateMypageCount();
+}
+function copyMypageField(companyId, field){
+  const c = companies.find(c=>c.id===companyId);
+  if (!c) return;
+  const m = mypageMemoFor(c.name);
+  if (m) copyText(m[field]||'');
+}
 function linkify(text) {
   const escaped = escapeHtml(text);
   return escaped.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:var(--accent);text-decoration:underline;">$1</a>');
@@ -2522,6 +2647,14 @@ renderEvents();
 renderMemoList();
 renderToday();
 console.log('✅ 就活Agent v2 起動完了（初期化順序バグ修正済み）');
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
