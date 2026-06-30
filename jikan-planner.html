@@ -343,6 +343,18 @@
 <div class="modal" id="course-modal">
   <div class="modal-card">
     <h3>固定添加计划</h3>
+    <div style="background:var(--accent-soft);border:1px solid var(--border);border-radius:9px;padding:11px 12px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:7px;">✨ AI 一键解析</div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:8px;">
+        贴一段话，AI 自动识别成每周课程 / 单次预定。<br>例：「每周二3限 海洋数值计算，周四10:25-12:10 组会，6/30 14点 见教授」
+      </div>
+      <textarea id="ci-input" rows="2" placeholder="把课表或安排贴进来…" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-family:var(--body);font-size:13px;outline:none;resize:vertical;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-primary" style="flex:0 0 auto;padding:7px 16px;" onclick="aiParseCourses()">解析</button>
+      </div>
+      <div id="ci-result" style="margin-top:10px;"></div>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:0 0 14px;">
     <div class="field">
       <label>種類</label>
       <div class="dow-pick" id="c-type">
@@ -430,6 +442,14 @@
       <input type="file" id="shukatsu-file" accept=".json,application/json" onchange="importFromShukatsu(event)"
         style="width:100%;font-size:12px;color:var(--text2);">
       <div id="import-result" style="font-size:12px;margin-top:8px;"></div>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+    <div class="field">
+      <label>🙈 已隐藏的就活日程</label>
+      <div style="font-size:11px;color:var(--text3);line-height:1.6;margin-bottom:8px;">
+        在日历上点💼块可以隐藏它（只在这里隐藏，<b>不影响就活Agent</b>）。隐藏的在这里恢复：
+      </div>
+      <div id="hidden-shukatsu-list"></div>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="saveSettings()">保存</button>
@@ -563,6 +583,8 @@ let weekOffset = 0;
 let dayNotes = JSON.parse(localStorage.getItem('jp_daynotes') || '{}');
 // Weekly goals keyed by that week's Monday date: { 'YYYY-MM-DD': 'goal text' }
 let weekGoals = JSON.parse(localStorage.getItem('jp_weekgoals') || '{}');
+// srcKeys of 就活Agent events the user chose to HIDE here. We never touch shukatsu_events — only hide locally.
+let hiddenShukatsu = JSON.parse(localStorage.getItem('jp_hidden_shukatsu') || '[]');
 let viewMode = 'week'; // 'week' or 'month'
 let courseDow = 1; // selected day in course modal
 // returns courses active on a given date (respecting skips)
@@ -587,9 +609,16 @@ function shukatsuOnDate(d){
   shukatsuEventsRaw().forEach(ev=>{
     if (ev.status === 'done') return;
     const f = shukatsuEventToFixed(ev); // {date,start,end,name,srcKey} or null (skips deadlines w/o time)
-    if (f && f.date===date) out.push({ ...f, name: '💼 '+f.name, kind:'shukatsu' });
+    if (f && f.date===date && !hiddenShukatsu.includes(f.srcKey)) out.push({ ...f, name: '💼 '+f.name, kind:'shukatsu' });
   });
   return out;
+}
+function onClickShukatsu(srcKey, name){
+  if (confirm(`${name}\n\n这是就活Agent的日程。\n要在时间管理里【隐藏】它吗？\n（不会影响就活Agent本身，之后可在 ⚙️ 设置里恢复）`)){
+    if (!hiddenShukatsu.includes(srcKey)) hiddenShukatsu.push(srcKey);
+    save('hidden_shukatsu', hiddenShukatsu);
+    render();
+  }
 }
 function deadTimeOnDate(d) {
   return [
@@ -749,7 +778,7 @@ function renderWeek() {
     const date = ymd(d);
     coursesOnDate(d).forEach(c=> placeBlock(di, c.start, c.end, c.name, 'ev-course', ()=>clickCourseBlock(c.id, date)));
     fixedOnDate(d).forEach(f=> placeBlock(di, f.start, f.end, f.name, 'ev-course'));
-    shukatsuOnDate(d).forEach(s=> placeBlock(di, s.start, s.end, s.name, 'ev-shukatsu', ()=>alert('これは就活Agentの予定です。\n時間プランナーでは表示のみ（編集・削除はできません）。\n変更したい場合は就活Agent側で行ってください。')));
+    shukatsuOnDate(d).forEach(s=> placeBlock(di, s.start, s.end, s.name, 'ev-shukatsu', ()=>onClickShukatsu(s.srcKey, s.name)));
     plans.filter(p=>p.date===date).forEach(p=> placeBlock(di, p.start, p.end, p.title, 'ev-plan', ()=>openPlanEdit(p.id), p.id, catColor(p.catId), p.note));
   });
 
@@ -1026,6 +1055,54 @@ function saveCourse() {
   document.getElementById('c-name').value='';
   renderCourseList(); render();
 }
+// ─── AI parse: text → courses / fixed events ──────────────
+let _ciParsed = [];
+async function aiParseCourses(){
+  if (!settings.groqKey){ alert('请先在 ⚙️ 设置里填入 Groq API 密钥。'); return; }
+  const text = document.getElementById('ci-input').value.trim();
+  if (!text) return;
+  const box = document.getElementById('ci-result');
+  box.innerHTML = '<div class="ai-loading"><span class="ai-spin"></span>解析中…</div>';
+  const today = new Date();
+  const dows = ['日','一','二','三','四','五','六'];
+  const sys = `你是日程解析助手。把用户的文字解析成结构化的固定安排。\n`+
+    `今天是 ${ymd(today)}（星期${dows[today.getDay()]}）。\n`+
+    `区分两种：\n`+
+    `- 每周重复的课/会 → type:"course"，给 day（0=周日,1=周一,2=周二,3=周三,4=周四,5=周五,6=周六）\n`+
+    `- 某个具体日期一次性的预定 → type:"fixed"，给 date（YYYY-MM-DD，相对日期如"明天""下周三"请基于今天换算）\n`+
+    `时限对照（用户说"X限"时用此时间）：1限08:30-10:15, 2限10:25-12:10, 3限13:00-14:45, 4限14:55-16:40, 5限16:50-18:35, 6限18:45-20:30。\n`+
+    `每项必须有 start 和 end（HH:mm 24小时制）。只说了开始没说结束时，默认1小时。\n`+
+    `只返回JSON：{"items":[{"type":"course","name":"组会","day":2,"start":"10:25","end":"11:25"},{"type":"fixed","name":"见教授","date":"2026-07-03","start":"14:00","end":"15:00"}]}。无法解析则 items 为空数组。`;
+  try{
+    const out = await callGroq([{role:'system',content:sys},{role:'user',content:text}], true);
+    let parsed; try{ parsed = JSON.parse(out); }catch(e){ box.innerHTML='<div style="color:var(--miss);font-size:12px;">解析失败，换个说法再试试。</div>'; return; }
+    const items = (parsed.items||[]).filter(it=>it.name&&it.start&&it.end&&(it.type==='course'?typeof it.day==='number':!!it.date));
+    if (!items.length){ box.innerHTML='<div style="color:var(--text3);font-size:12px;">没有识别到可添加的安排。</div>'; return; }
+    _ciParsed = items;
+    box.innerHTML = `<div style="font-size:12px;color:var(--text2);margin-bottom:6px;">识别到 ${items.length} 项（确认后添加）：</div>`
+      + items.map(it=>{
+          const when = it.type==='course' ? `每周${dows[it.day]}` : (it.date||'').slice(5);
+          const tag = it.type==='course' ? '每周' : '单次';
+          return `<div style="padding:5px 0;font-size:12px;border-top:1px solid var(--border);"><b>${escapeHtml(it.name)}</b> · ${when} ${it.start}-${it.end} <span style="color:var(--text3);">(${tag})</span></div>`;
+        }).join('')
+      + `<button class="btn btn-primary" style="width:auto;padding:7px 16px;margin-top:10px;" onclick="applyCourseParse()">全部添加</button>`;
+  }catch(e){ box.innerHTML = `<div style="color:var(--miss);font-size:12px;">错误: ${e.message}</div>`; }
+}
+function applyCourseParse(){
+  let added = 0;
+  _ciParsed.forEach(it=>{
+    if (it.type==='course' && typeof it.day==='number'){
+      courses.push({ id: Date.now()+Math.floor(Math.random()*100000), name: it.name, day: it.day, start: it.start, end: it.end }); added++;
+    } else if (it.type==='fixed' && it.date){
+      fixed.push({ id: Date.now()+Math.floor(Math.random()*100000), name: it.name, date: it.date, start: it.start, end: it.end }); added++;
+    }
+  });
+  save('courses',courses); save('fixed',fixed);
+  _ciParsed = [];
+  document.getElementById('ci-input').value = '';
+  document.getElementById('ci-result').innerHTML = `<div style="color:var(--done);font-size:12px;">✅ 已添加 ${added} 项。</div>`;
+  renderCourseList(); render();
+}
 function renderCourseList() {
   const wrap = document.getElementById('course-list');
   let html = '';
@@ -1120,8 +1197,8 @@ function renderDayDetail() {
   const dd = new Date(detailDate+'T00:00:00');
   const dead = deadTimeOnDate(dd);
   // dead time (courses + fixed + 就活) — auto-shown in BOTH columns, NOT draggable
-  dead.forEach(c=> placeDD(0, c.start,c.end,c.name, c.kind==='shukatsu'?'ev-shukatsu':'ev-course'));
-  dead.forEach(c=> placeDD(1, c.start,c.end,c.name, c.kind==='shukatsu'?'ev-shukatsu':'ev-course'));
+  dead.forEach(c=> placeDD(0, c.start,c.end,c.name, c.kind==='shukatsu'?'ev-shukatsu':'ev-course', c.kind==='shukatsu'?()=>onClickShukatsu(c.srcKey,c.name):null));
+  dead.forEach(c=> placeDD(1, c.start,c.end,c.name, c.kind==='shukatsu'?'ev-shukatsu':'ev-course', c.kind==='shukatsu'?()=>onClickShukatsu(c.srcKey,c.name):null));
   // plan blocks: draggable (drag to actual column to generate an actual; drag within plan column to move)
   plans.filter(p=>p.date===detailDate).forEach(p=> placeDD(0, p.start,p.end,p.title,'ev-plan', null, {kind:'plan', id:p.id}, catColor(p.catId), p.note));
   // actual blocks: draggable (move) + resizable
@@ -1340,7 +1417,25 @@ function toggleSidebar(){ document.querySelector('.sidebar').classList.toggle('h
 
 // ─── Settings (Groq key) ──────────────────────────────────
 let settings = JSON.parse(localStorage.getItem('jp_settings') || '{}');
-function openSettings(){ document.getElementById('set-groq').value = settings.groqKey || ''; openModal('settings-modal'); }
+function openSettings(){ document.getElementById('set-groq').value = settings.groqKey || ''; renderHiddenShukatsu(); openModal('settings-modal'); }
+function renderHiddenShukatsu(){
+  const box = document.getElementById('hidden-shukatsu-list');
+  if (!box) return;
+  if (!hiddenShukatsu.length){ box.innerHTML = '<div style="color:var(--text3);font-size:12px;">没有隐藏的就活日程。</div>'; return; }
+  const nameMap = {};
+  shukatsuEventsRaw().forEach(ev=>{ const f=shukatsuEventToFixed(ev); if(f) nameMap[f.srcKey]=`${f.name}（${f.date.slice(5)} ${f.start}）`; });
+  box.innerHTML = hiddenShukatsu.map((k,i)=>
+    `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;border-top:1px solid var(--border);">
+      <span style="flex:1;">💼 ${nameMap[k] ? escapeHtml(nameMap[k]) : '（已不在就活日程中）'}</span>
+      <button class="btn btn-ghost" style="flex:0 0 auto;padding:4px 12px;" onclick="unhideShukatsu(${i})">恢复</button>
+    </div>`).join('');
+}
+function unhideShukatsu(i){
+  hiddenShukatsu.splice(i,1);
+  save('hidden_shukatsu', hiddenShukatsu);
+  renderHiddenShukatsu();
+  render();
+}
 function saveSettings(){
   settings.groqKey = document.getElementById('set-groq').value.trim();
   localStorage.setItem('jp_settings', JSON.stringify(settings));
