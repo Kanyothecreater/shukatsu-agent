@@ -590,7 +590,12 @@ let courseDow = 1; // selected day in course modal
 // returns courses active on a given date (respecting skips)
 function coursesOnDate(d) {
   const date = ymd(d), dow = d.getDay();
-  return courses.filter(c => c.day===dow && !skips.some(s=>s.courseId===c.id && s.date===date));
+  return courses.filter(c =>
+    c.day===dow &&
+    (!c.from || date >= c.from) &&
+    (!c.until || date <= c.until) &&
+    !skips.some(s=>s.courseId===c.id && s.date===date)
+  );
 }
 function fixedOnDate(d) {
   const date = ymd(d);
@@ -1065,25 +1070,37 @@ async function aiParseCourses(){
   box.innerHTML = '<div class="ai-loading"><span class="ai-spin"></span>解析中…</div>';
   const today = new Date();
   const dows = ['日','一','二','三','四','五','六'];
-  const sys = `你是日程解析助手。把用户的文字解析成结构化的固定安排。\n`+
+  const sys = `你是日程解析助手。把用户贴的课表/安排文字，解析成结构化日程。你要【自己判断】每一项是"每周重复"还是"只有一次"，不要让用户手动指定。\n`+
     `今天是 ${ymd(today)}（星期${dows[today.getDay()]}）。\n`+
-    `区分两种：\n`+
-    `- 每周重复的课/会 → type:"course"，给 day（0=周日,1=周一,2=周二,3=周三,4=周四,5=周五,6=周六）\n`+
-    `- 某个具体日期一次性的预定 → type:"fixed"，给 date（YYYY-MM-DD，相对日期如"明天""下周三"请基于今天换算）\n`+
-    `时限对照（用户说"X限"时用此时间）：1限08:30-10:15, 2限10:25-12:10, 3限13:00-14:45, 4限14:55-16:40, 5限16:50-18:35, 6限18:45-20:30。\n`+
-    `每项必须有 start 和 end（HH:mm 24小时制）。只说了开始没说结束时，默认1小时。\n`+
-    `只返回JSON：{"items":[{"type":"course","name":"组会","day":2,"start":"10:25","end":"11:25"},{"type":"fixed","name":"见教授","date":"2026-07-03","start":"14:00","end":"15:00"}]}。无法解析则 items 为空数组。`;
+    `【判断重复还是单次】：\n`+
+    `- 出现"每周/毎週/每个/周X都/曜日"等 → 每周重复，type:"course"。\n`+
+    `- 指向某个具体的一天、或"这次/明天/X月X日"等一次性 → 单次，type:"fixed"。\n`+
+    `- 拿不准时，如果带"星期X"且像课/例会，按每周重复处理。\n`+
+    `【course 字段】：day（0=周日,1=周一,2=周二,3=周三,4=周四,5=周五,6=周六）。\n`+
+    `★重要：如果用户说了"从X月X日开始/X日起/X月开始"，必须加 from:"YYYY-MM-DD"，表示这门课从这天所在那周才开始，之前的周【绝对不要】显示。例如"从7/8开始的每周三"→ day:3, from:"今年-07-08"。如果说"到X为止/X结束"，加 until:"YYYY-MM-DD"。没说起止就不加。\n`+
+    `【fixed 字段】：date（YYYY-MM-DD）。相对日期（明天/下周三等）基于今天换算。\n`+
+    `【时限对照】用户说"X限"时用：1限08:30-10:15, 2限10:25-12:10, 3限13:00-14:45, 4限14:55-16:40, 5限16:50-18:35, 6限18:45-20:30。\n`+
+    `每项必须有 start 和 end（HH:mm 24小时制）。只说开始没说结束 → 默认1小时。年份没说就用今年（${today.getFullYear()}）。\n`+
+    `只返回JSON：{"items":[{"type":"course","name":"组会","day":3,"start":"10:25","end":"11:25","from":"2026-07-08"},{"type":"fixed","name":"见教授","date":"2026-07-03","start":"14:00","end":"15:00"}]}。无法解析则 items 为空数组。`;
   try{
     const out = await callGroq([{role:'system',content:sys},{role:'user',content:text}], true);
     let parsed; try{ parsed = JSON.parse(out); }catch(e){ box.innerHTML='<div style="color:var(--miss);font-size:12px;">解析失败，换个说法再试试。</div>'; return; }
     const items = (parsed.items||[]).filter(it=>it.name&&it.start&&it.end&&(it.type==='course'?typeof it.day==='number':!!it.date));
     if (!items.length){ box.innerHTML='<div style="color:var(--text3);font-size:12px;">没有识别到可添加的安排。</div>'; return; }
     _ciParsed = items;
-    box.innerHTML = `<div style="font-size:12px;color:var(--text2);margin-bottom:6px;">识别到 ${items.length} 项（确认后添加）：</div>`
+    box.innerHTML = `<div style="font-size:12px;color:var(--text2);margin-bottom:6px;">AI 识别到 ${items.length} 项，确认下判断对不对：</div>`
       + items.map(it=>{
-          const when = it.type==='course' ? `每周${dows[it.day]}` : (it.date||'').slice(5);
-          const tag = it.type==='course' ? '每周' : '单次';
-          return `<div style="padding:5px 0;font-size:12px;border-top:1px solid var(--border);"><b>${escapeHtml(it.name)}</b> · ${when} ${it.start}-${it.end} <span style="color:var(--text3);">(${tag})</span></div>`;
+          let badge, when;
+          if (it.type==='course'){
+            badge = '<span style="color:var(--accent);font-weight:600;">🔁 每周</span>';
+            when = `周${dows[it.day]}`;
+            if (it.from) when += ` · ${it.from.slice(5)}起`;
+            if (it.until) when += ` · 至${it.until.slice(5)}`;
+          } else {
+            badge = '<span style="color:#f59e0b;font-weight:600;">📌 单次</span>';
+            when = (it.date||'').slice(5);
+          }
+          return `<div style="padding:6px 0;font-size:12px;border-top:1px solid var(--border);line-height:1.5;">${badge} <b>${escapeHtml(it.name)}</b><br><span style="color:var(--text3);">${when}　${it.start}-${it.end}</span></div>`;
         }).join('')
       + `<button class="btn btn-primary" style="width:auto;padding:7px 16px;margin-top:10px;" onclick="applyCourseParse()">全部添加</button>`;
   }catch(e){ box.innerHTML = `<div style="color:var(--miss);font-size:12px;">错误: ${e.message}</div>`; }
@@ -1092,7 +1109,10 @@ function applyCourseParse(){
   let added = 0;
   _ciParsed.forEach(it=>{
     if (it.type==='course' && typeof it.day==='number'){
-      courses.push({ id: Date.now()+Math.floor(Math.random()*100000), name: it.name, day: it.day, start: it.start, end: it.end }); added++;
+      const co = { id: Date.now()+Math.floor(Math.random()*100000), name: it.name, day: it.day, start: it.start, end: it.end };
+      if (it.from) co.from = it.from;
+      if (it.until) co.until = it.until;
+      courses.push(co); added++;
     } else if (it.type==='fixed' && it.date){
       fixed.push({ id: Date.now()+Math.floor(Math.random()*100000), name: it.name, date: it.date, start: it.start, end: it.end }); added++;
     }
